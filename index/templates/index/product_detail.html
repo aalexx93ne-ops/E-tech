@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} | E-Tech{% endblock %}
+
+{% block content %}
+<div class="product-container">
+  <div class="product-image">
+    {% if product.main_image %}
+      <img src="{{ product.main_image.url }}" alt="{{ product.name }}">
+    {% else %}
+      <img src="{% static 'img/placeholder.png' %}" alt="Нет изображения">
+    {% endif %}
+  </div>
+  <div class="product-info">
+    <h1>{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+    <div class="price">
+      {% if product.has_discount %}
+        <del>{{ product.price }} ₽</del>
+        <strong class="final-price">{{ product.get_final_price }} ₽</strong>
+      {% else %}
+        {{ product.price }} ₽
+      {% endif %}
+    </div>
+
+    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="add-to-cart-form">
+        {% csrf_token %}
+        {{ cart_product_form }}
+        <button type="submit" class="action-btn primary">Добавить в корзину</button>
+    </form>
+
+    <div class="guarantees">
+      <span>✔ Гарантия качества</span>
+      <span>✔ Быстрая доставка</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,276 @@
+:root {
+  --primary-green: #4ade80;
+  --dark-green: #166534;
+  --light-bg: #f5f5f7;
+}
+
+body {
+  padding-top: 130px; /* Увеличил отступ, чтобы точно не было наложений */
+  background-color: var(--light-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+.catalog-layout {
+  display: grid;
+  grid-template-areas:
+    "slider slider"
+    "sidebar header"
+    "sidebar products";
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.catalog-sidebar {
+  grid-area: sidebar;
+}
+
+.catalog-slider {
+  grid-area: slider;
+}
+
+.catalog-header {
+  grid-area: header;
+}
+
+.catalog-products {
+  grid-area: products;
+}
+
+.search-bar {
+  height: 48px;
+  background: var(--light-bg);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 16px;
+  padding-left: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.1);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.05);
+}
+
+.footer {
+  background: #fff;
+  padding: 40px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 40px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+ul {
+  list-style: none;
+}
+
+/* Общие стили для контейнеров */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Стили для заголовков */
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1d1d1f;
+}
+
+/* Универсальные кнопки */
+.button {
+  display: inline-block;
+  background-color: #4caf9f;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  text-align: center;
+}
+
+.button:hover {
+  background-color: #3d8b7d;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button.checkout {
+  background-color: #166534;
+}
+
+.button.checkout:hover {
+  background-color: #14532d;
+}
+
+.button.small {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.remove-link {
+  color: #ef4444;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.remove-link:hover {
+  text-decoration: underline;
+}
+
+.update-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.update-form input[type="number"] {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+/* Стили для таблиц в корзине и оформлении заказа */
+.cart-table, .order-info table {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 30px;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.cart-table th, .cart-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cart-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.cart-table .num {
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.cart-table .total td {
+  font-weight: 700;
+  font-size: 18px;
+  background-color: #f8fafc;
+}
+
+/* Действия в корзине */
+.cart-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+/* Форма оформления заказа */
+.order-form {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.order-form p {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.order-form input[type="text"],
+.order-form input[type="email"],
+.order-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.order-info {
+  max-width: 900px;
+  margin: 0 auto 30px;
+  text-align: center;
+}
+
+.order-info h3 {
+  margin-bottom: 20px;
+  color: #1d1d1f;
+}
+
+.order-info ul {
+  padding: 0;
+  margin: 20px 0;
+}
+
+.order-info li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Media query for footer on small screens */
+@media (max-width: 550px) {
+  .footer{
+    min-width: 100%;
+  }
+}

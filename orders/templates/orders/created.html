@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Заказ оформлен{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Спасибо за заказ!</h1>
+    <p>Ваш заказ №{{ order.id }} успешно оформлен.</p>
+</div>
+{% endblock %}

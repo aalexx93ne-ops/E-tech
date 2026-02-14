@@ -1,0 +1,51 @@
+/* Основной layout-контейнер */
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  grid-template-areas:
+    "sidebar slider"
+    "sidebar header"
+    "sidebar product-list";
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 24px;
+  padding: 24px;
+  position: relative;
+}
+
+/* Слайдер */
+.catalog-slider {
+  grid-area: slider;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Хедер каталога */
+.catalog-header {
+  grid-area: header;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+
+/* Сайдбар */
+.catalog-sidebar {
+  grid-area: sidebar;
+  position: sticky;
+  top: 136px; /* 112px (header) + 24px (gap) */
+  height: fit-content;
+}
+
+/* Список товаров */
+.catalog-products {
+  grid-area: product-list;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}

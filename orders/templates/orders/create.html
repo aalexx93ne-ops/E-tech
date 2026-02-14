@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'orders/css/orders.css' %}" />
+<script src="{% static 'orders/js/order_create.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Оформление заказа</h1>
+    <div class="order-info">
+        <h3>Ваш заказ</h3>
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Количество</th>
+                    <th>Цена</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.total_price }} ₽</td>
+                    </tr>
+                {% endfor %}
+                <tr class="total">
+                    <td>Итого</td>
+                    <td></td>
+                    <td>{{ cart.get_total_price }} ₽</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <form action="." method="post" class="order-form">
+        {{ form.as_p }}
+        <p><input type="submit" value="Создать заказ" class="button"></p>
+        {% csrf_token %}
+    </form>
+
+    <!-- Модальное окно для пустой корзины -->
+    {% if show_modal %}
+    <div id="empty-cart-modal" class="modal show">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <h2>Корзина пуста</h2>
+            <p>Невозможно оформить заказ, так как корзина пуста. Добавьте товары в корзину.</p>
+            <button id="close-modal" class="button">OK</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
+{% endblock %}

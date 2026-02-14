@@ -1,0 +1,91 @@
+.hero-section {
+  position: relative;
+  z-index: 1;
+}
+
+.swiper {
+  width: 100%; 
+  height: 100%;
+}
+
+/* Стили для каждого слайда */
+.swiper-slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swiper-slide img {
+  width: 100%; 
+  height: 400px; /* Фиксированная высота для единообразия */
+  object-fit: cover; 
+  border-radius: 12px;
+}
+
+/* Кастомные кнопки навигации (влево/вправо) */
+.swiper-button-prev,
+.swiper-button-next {
+  position: absolute;
+  top: 50%; /* Выравниваем по вертикали */
+  transform: translateY(-50%);
+  width: 50px; /* Размер кнопки */
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.7); /* Полупрозрачный фон */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Легкая тень */
+  z-index: 10; /* Поверх изображения */
+}
+
+/* Расположение стрелок */
+.swiper-button-prev {
+  left: 10px;
+}
+.swiper-button-next {
+  right: 10px;
+}
+
+/* Убираем стандартные стрелки Swiper */
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: solid #666;
+  border-width: 2px 2px 0 0;
+}
+
+/* Поворачиваем стрелки в нужном направлении */
+.swiper-button-prev::after {
+  transform: rotate(-135deg);
+}
+
+.swiper-button-next::after {
+  transform: rotate(45deg);
+}
+
+/* Стилизация пагинации */
+.swiper-pagination {
+  position: absolute;
+  bottom: 20px; /* Отступ снизу */
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background-color: gray;
+  opacity: 0.5;
+  margin: 0 5px; /* Расстояние между точками */
+  border-radius: 50%;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: black;
+  opacity: 1;
+}

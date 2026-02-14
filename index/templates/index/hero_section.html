@@ -1,0 +1,46 @@
+{% load static %}
+<section class="hero-section">
+  <div class="swiper" aria-label="Баннеры каталога">
+    <div class="swiper-wrapper">
+      {% if banners %}
+        {% for banner in banners %}
+          <div class="swiper-slide">
+            <img
+              src="{{ banner.image.url }}"
+              alt="{{ banner.alt_text }}"
+              loading="lazy"
+            />
+          </div>
+        {% endfor %}
+      {% else %}
+        <!-- Заглушки, если в базе нет баннеров -->
+        <div class="swiper-slide">
+          <img
+            src="{% static 'img/slider/1.png' %}"
+            alt="Акция на электронику"
+            loading="lazy"
+          />
+        </div>
+        <div class="swiper-slide">
+          <img
+            src="{% static 'img/slider/2.png' %}"
+            alt="Скидки на смартфоны"
+            loading="lazy"
+          />
+        </div>
+        <div class="swiper-slide">
+          <img
+            src="{% static 'img/slider/3.png' %}"
+            alt="Новое поступление"
+            loading="lazy"
+          />
+        </div>
+      {% endif %}
+    </div>
+    <div class="swiper-pagination"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+  <script src="{% static 'js/swiper-bundle.min.js' %}"></script>
+  <script src="{% static 'js/Hero Section.js' %}"></script>
+</section>

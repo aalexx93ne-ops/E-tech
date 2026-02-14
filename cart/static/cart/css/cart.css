@@ -1,0 +1,45 @@
+/* Modal styles for cart page */
+.cart-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.cart-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-modal .modal-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.cart-modal .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    z-index: 1001;
+}
+
+.cart-modal .modal-content h2 {
+    margin-bottom: 15px;
+    color: #1d1d1f;
+}
+
+.cart-modal .modal-content p {
+    margin-bottom: 20px;
+    color: #64748b;
+}

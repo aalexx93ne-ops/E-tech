@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}E-Tech{% endblock %}</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/modern-normalize.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/grid.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/menu.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/product_card.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/product_detail.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/Hero Section.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/swiper-bundle.min.css' %}" />
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    {% include 'menu.html' %}
+
+    <main>
+      {% block content %}
+      <!-- Контент страниц будет вставляться сюда -->
+      {% endblock %}
+    </main>
+
+    {% include 'footer.html' %}
+  </body>
+</html>

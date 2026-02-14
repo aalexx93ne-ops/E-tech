@@ -1,0 +1,112 @@
+{% load static %}
+<header class="header">
+  <div class="main-nav">
+    <div class="logo">
+      <a href="{% url 'index:index' %}">
+        <img src="{% static 'img/logo.png' %}" alt="E-Tech" />
+      </a>
+    </div>
+    <button
+      class="menu_icon"
+      aria-expanded="false"
+      aria-controls="menu-list"
+    >
+      <span></span>
+    </button>
+
+    <nav class="menu">
+      <div class="menu-content">
+        <ul class="menu-list">
+          <li><a href="{% url 'index:index' %}">Главная</a></li>
+          <li><a href="#">Акции</a></li>
+          <li><a href="#">Контакты</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="menu-icons">
+      <button class="icon-btn">
+        <svg
+          class="profile-icon"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+        >
+          <defs>
+            <filter
+              id="profile-shadow"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
+              <feDropShadow
+                dx="0"
+                dy="1"
+                stdDeviation="0.5"
+                flood-opacity="0.2"
+              />
+            </filter>
+          </defs>
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            fill="#E8F0F0"
+            filter="url(#profile-shadow)"
+          />
+          <path
+            d="M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 15.5a4 4 0 0 1 8 0v0.5H8v-0.5z"
+            fill="#9ea7ad"
+          />
+        </svg>
+      </button>
+
+      <div class="menu_icons_cart-wrap">
+        <a href="{% url 'cart:cart_detail' %}" class="icon-btn">
+          <svg class="cart-icon" width="32" height="32" viewBox="0 0 24 24">
+            <defs>
+              <filter
+                id="cart-shadow"
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+              >
+                <feDropShadow
+                  dx="0"
+                  dy="1"
+                  stdDeviation="0.5"
+                  flood-opacity="0.2"
+                />
+              </filter>
+            </defs>
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              fill="#E8F0F0"
+              filter="url(#cart-shadow)"
+            />
+            <path
+              d="M8 8h8l-1 7H9L8 8zm2-2V5a2 2 0 1 1 4 0v1"
+              fill="none"
+              stroke="#9ea7ad"
+              stroke-width="1.5"
+            />
+          </svg>
+          {% if cart %}
+            <div class="cart-counter">{{ cart|length }}</div>
+          {% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <form action="{% url 'index:search' %}" method="get" class="search-container">
+      <input type="text" name="q" class="search-input" placeholder="Поиск..." />
+    </form>
+  </div>
+</header>
+<script src="{% static 'js/menu.js' %}"></script>

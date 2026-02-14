@@ -1,0 +1,59 @@
+<form method="get" class="sidebar">
+  <h3 class="sidebar-title" id="brands-title">Бренды</h3>
+  <ul class="sidebar-list" aria-labelledby="brands-title">
+    {% for brand in brands %}
+    <li>
+      <label>
+        <input type="checkbox" name="brand" value="{{ brand.slug }}"
+               {% if brand.slug in selected_brands %}checked{% endif %}>
+        {{ brand.name }}
+      </label>
+    </li>
+    {% empty %}
+    <li>Бренды не найдены.</li>
+    {% endfor %}
+  </ul>
+
+  <h3 class="sidebar-title" id="categories-title">Категории</h3>
+  <ul class="sidebar-list" aria-labelledby="categories-title">
+    {% for category in categories %}
+    <li>
+      <label>
+        <input type="checkbox" name="category" value="{{ category.slug }}"
+               {% if category.slug in selected_categories %}checked{% endif %}>
+        {{ category.name }}
+      </label>
+    </li>
+    {% empty %}
+    <li>Категории не найдены.</li>
+    {% endfor %}
+  </ul>
+
+  <h3 class="sidebar-title" id="tags-title">Теги</h3>
+  <ul class="sidebar-list" aria-labelledby="tags-title">
+    {% for tag in tags %}
+    <li>
+      <label>
+        <input type="checkbox" name="tag" value="{{ tag.slug }}"
+               {% if tag.slug in selected_tags %}checked{% endif %}>
+        {{ tag.name }}
+      </label>
+    </li>
+    {% empty %}
+    <li>Теги не найдены.</li>
+    {% endfor %}
+  </ul>
+
+  <h3 class="sidebar-title">Скидка</h3>
+  <ul class="sidebar-list">
+    <li>
+      <label>
+        <input type="checkbox" name="discount" value="1"
+               {% if discount_only %}checked{% endif %}>
+        Только со скидкой
+      </label>
+    </li>
+  </ul>
+
+  <button class="action-btn primary" type="submit">Применить</button>
+</form>

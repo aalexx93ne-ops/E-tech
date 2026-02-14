@@ -1,0 +1,34 @@
+{% load static %}
+<div class="product-card" role="article">
+  <!-- Вся обёртка кликабельна, кроме кнопок -->
+  <a href="{% url 'index:product_detail' product.slug %}" class="product-link" aria-label="Подробнее о товаре">
+    <div class="product-image">
+      {% if product.main_image %}
+        <img src="{{ product.main_image.url }}" alt="{{ product.name }}">
+      {% else %}
+        <img src="{% static 'img/placeholder.png' %}" alt="Нет изображения">
+      {% endif %}
+    </div>
+    <div class="product-info">
+      <h3 class="product-name">{{ product.name }}</h3>
+      <p class="product-details">
+        {{ product.description|truncatewords:10 }}<br />
+        {% if product.has_discount %}
+          <del class="old-price">{{ product.price }} ₽</del>
+          <strong class="final-price">{{ product.get_final_price }} ₽</strong>
+        {% else %}
+          <span class="final-price">{{ product.price }} ₽</span>
+        {% endif %}
+      </p>
+    </div>
+  </a>
+
+  <!-- Кнопки действия вне ссылки -->
+  <div class="product-actions">
+    <form action="{% url 'cart:cart_add' product.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="action-btn primary" title="Купить">Купить</button>
+    </form>
+  </div>
+</div>
