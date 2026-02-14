@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Brand, Discount, Product, ProductImage, Review, Stock
+from .models import Category, Brand, Discount, Product, ProductImage, Review, Stock, SpecificationType, ProductSpecification
 
 
 @admin.register(Category)
@@ -27,6 +27,12 @@ class StockInline(admin.TabularInline):
     can_delete = False
 
 
+class ProductSpecificationInline(admin.TabularInline):
+    model = ProductSpecification
+    extra = 1
+    autocomplete_fields = ['spec_type']
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'brand', 'price',
@@ -35,11 +41,26 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ('category', 'brand', 'discount')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [StockInline]
+    inlines = [StockInline, ProductSpecificationInline]
 
     def stock_quantity(self, obj):
         return obj.stock.quantity if hasattr(obj, 'stock') else 0
     stock_quantity.short_description = 'Количество на складе'
+
+
+@admin.register(SpecificationType)
+class SpecificationTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',)}
+
+
+@admin.register(ProductSpecification)
+class ProductSpecificationAdmin(admin.ModelAdmin):
+    list_display = ('product', 'spec_type', 'value')
+    list_filter = ('spec_type',)
+    search_fields = ('product__name', 'spec_type__name', 'value')
+    autocomplete_fields = ['product', 'spec_type']
 
 
 @admin.register(ProductImage)

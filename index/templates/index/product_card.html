@@ -12,14 +12,16 @@
     <div class="product-info">
       <h3 class="product-name">{{ product.name }}</h3>
       <p class="product-details">
-        {{ product.description|truncatewords:10 }}<br />
+        {{ product.description }}
+      </p>
+      <div class="product-price">
         {% if product.has_discount %}
           <del class="old-price">{{ product.price }} ₽</del>
           <strong class="final-price">{{ product.get_final_price }} ₽</strong>
         {% else %}
           <span class="final-price">{{ product.price }} ₽</span>
         {% endif %}
-      </p>
+      </div>
     </div>
   </a>
 

@@ -1,5 +1,14 @@
 {% load static %}
 <form method="get" class="sidebar">
+  <h3 class="sidebar-title">Цена</h3>
+  <div class="price-filter">
+    <input type="number" name="price_from" placeholder="От" min="0" step="0.01"
+           value="{{ price_from|default:'' }}">
+    <span class="price-separator">—</span>
+    <input type="number" name="price_to" placeholder="До" min="0" step="0.01"
+           value="{{ price_to|default:'' }}">
+  </div>
+
   <h3 class="sidebar-title" id="brands-title">Бренды</h3>
   <ul class="sidebar-list collapsible" id="brands-list" aria-labelledby="brands-title">
     {% for brand in brands %}
@@ -52,6 +61,26 @@
   </ul>
   {% if tags|length > 5 %}
   <button type="button" class="show-more-btn" onclick="toggleList('tags-list', this)">Показать все ({{ tags|length }})</button>
+  {% endif %}
+
+  {% if spec_filters %}
+  {% for spec_type in spec_filters %}
+  <h3 class="sidebar-title" id="spec-{{ spec_type.slug }}-title">{{ spec_type.name }}</h3>
+  <ul class="sidebar-list collapsible" id="spec-{{ spec_type.slug }}-list" aria-labelledby="spec-{{ spec_type.slug }}-title">
+    {% for value in spec_type.values %}
+    <li class="{% if forloop.counter > 5 %}hidden-item{% endif %}">
+      <label>
+        <input type="checkbox" name="spec_{{ spec_type.slug }}" value="{{ value }}"
+               {% if value in spec_type.selected_values %}checked{% endif %}>
+        {{ value }}
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if spec_type.values|length > 5 %}
+  <button type="button" class="show-more-btn" onclick="toggleList('spec-{{ spec_type.slug }}-list', this)">Показать все ({{ spec_type.values|length }})</button>
+  {% endif %}
+  {% endfor %}
   {% endif %}
 
   <h3 class="sidebar-title">Скидка</h3>

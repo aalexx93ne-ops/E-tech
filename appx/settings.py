@@ -134,3 +134,12 @@ CART_SESSION_ID = 'cart'
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# Jazzmin settings
+JAZZMIN_SETTINGS = {
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "index.product": "single",
+    },
+}

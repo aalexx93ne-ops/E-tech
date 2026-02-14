@@ -10,23 +10,26 @@
     {% include 'index/sidebar.html' %}
   </aside>
 
-  <!-- Слайдер вынесен в свою отдельную область сетки -->
-  <div class="catalog-slider">
-    {% include 'index/hero_section.html' %}
-  </div>
+  <!-- Основной контент -->
+  <div class="catalog-main">
+    <!-- Слайдер -->
+    <div class="catalog-slider">
+      {% include 'index/hero_section.html' %}
+    </div>
 
-  <!-- Заголовок каталога -->
-  <header class="catalog-header">
-    <h1 class="catalog-title">Каталог товаров</h1>
-  </header>
+    <!-- Заголовок каталога -->
+    <header class="catalog-header">
+      <h1 class="catalog-title">Каталог товаров</h1>
+    </header>
 
-  <!-- Список товаров -->
-  <div class="catalog-products">
-    {% for product in products %}
-      {% include 'index/product_card.html' %}
-    {% empty %}
-      <p class="empty-message">Нет товаров для отображения.</p>
-    {% endfor %}
+    <!-- Список товаров -->
+    <div class="catalog-products">
+      {% for product in products %}
+        {% include 'index/product_card.html' %}
+      {% empty %}
+        <p class="empty-message">Нет товаров для отображения.</p>
+      {% endfor %}
+    </div>
   </div>
 
 </div>

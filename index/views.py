@@ -1,7 +1,7 @@
 # index/views.py
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
-from .models import Product, Category, Brand, Tag, Banner
+from .models import Product, Category, Brand, Tag, Banner, SpecificationType, ProductSpecification
 from cart.forms import CartAddProductForm
 
 
@@ -13,12 +13,26 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         queryset = Product.objects.select_related(
-            'category', 'brand', 'discount', 'stock').prefetch_related('images', 'tags')
+            'category', 'brand', 'discount', 'stock').prefetch_related('images', 'tags', 'specifications__spec_type')
 
         category_slugs = self.request.GET.getlist('category')
         brand_slugs = self.request.GET.getlist('brand')
         tag_slugs = self.request.GET.getlist('tag')
         discount = self.request.GET.get('discount')
+        price_from = self.request.GET.get('price_from')
+        price_to = self.request.GET.get('price_to')
+
+        # Фильтр по цене
+        if price_from:
+            try:
+                queryset = queryset.filter(price__gte=float(price_from))
+            except ValueError:
+                pass
+        if price_to:
+            try:
+                queryset = queryset.filter(price__lte=float(price_to))
+            except ValueError:
+                pass
 
         if category_slugs:
             queryset = queryset.filter(category__slug__in=category_slugs)
@@ -29,7 +43,21 @@ class ProductListView(ListView):
         if discount == '1':
             queryset = queryset.filter(discount__isnull=False)
 
-        return queryset
+        # Фильтр по характеристикам
+        spec_filters = {}
+        for key, values in self.request.GET.lists():
+            if key.startswith('spec_'):
+                spec_slug = key.replace('spec_', '')
+                spec_filters[spec_slug] = values
+
+        if spec_filters:
+            for spec_slug, values in spec_filters.items():
+                queryset = queryset.filter(
+                    specifications__spec_type__slug=spec_slug,
+                    specifications__value__in=values
+                )
+
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,8 +70,35 @@ class ProductListView(ListView):
         context['selected_brands'] = self.request.GET.getlist('brand')
         context['selected_tags'] = self.request.GET.getlist('tag')
         context['discount_only'] = self.request.GET.get('discount') == '1'
+        context['price_from'] = self.request.GET.get('price_from')
+        context['price_to'] = self.request.GET.get('price_to')
+
+        # Фильтры по характеристикам для сайдбара
+        context['spec_filters'] = self.get_spec_filters()
 
         return context
+
+    def get_spec_filters(self):
+        """Получает уникальные значения для каждого типа характеристик"""
+        spec_types = SpecificationType.objects.all()
+        spec_filters = []
+
+        for spec_type in spec_types:
+            # Получаем все уникальные значения для этого типа характеристики
+            values = ProductSpecification.objects.filter(
+                spec_type=spec_type
+            ).values_list('value', flat=True).distinct().order_by('value')
+
+            if values:
+                selected_values = self.request.GET.getlist(f'spec_{spec_type.slug}')
+                spec_filters.append({
+                    'name': spec_type.name,
+                    'slug': spec_type.slug,
+                    'values': list(values),
+                    'selected_values': selected_values
+                })
+
+        return spec_filters
 
 
 class ProductDetailView(DetailView):

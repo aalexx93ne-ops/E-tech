@@ -14,7 +14,28 @@
   </div>
   <div class="product-info">
     <h1>{{ product.name }}</h1>
-    <p>{{ product.description }}</p>
+
+    {% if product.specifications.exists %}
+    <div class="product-specifications">
+      <h3>Характеристики</h3>
+      <table class="specs-table">
+        <tbody>
+          {% for spec in product.specifications.all %}
+          <tr>
+            <td class="spec-name">{{ spec.spec_type.name }}</td>
+            <td class="spec-value">{{ spec.value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="product-description">
+      <h3>Описание</h3>
+      <p>{{ product.description }}</p>
+    </div>
+
     <div class="price">
       {% if product.has_discount %}
         <del>{{ product.price }} ₽</del>

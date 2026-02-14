@@ -63,3 +63,30 @@
 .show-more-btn:hover {
   text-decoration: underline;
 }
+
+/* Стили для фильтра цены */
+.price-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.price-filter input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: calc(50% - 12px);
+}
+
+.price-filter input:focus {
+  outline: none;
+  border-color: #3cb46d;
+}
+
+.price-separator {
+  color: #999;
+  font-size: 14px;
+}

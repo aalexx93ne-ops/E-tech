@@ -40,6 +40,68 @@
   gap: 15px;
 }
 
+/* Стили для характеристик */
+.product-specifications {
+  margin: 20px 0;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.product-specifications h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.specs-table tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.specs-table tr:last-child {
+  border-bottom: none;
+}
+
+.specs-table td {
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.spec-name {
+  width: 50%;
+  color: #666;
+  font-weight: 500;
+}
+
+.spec-value {
+  width: 50%;
+  color: #333;
+  text-align: right;
+}
+
+/* Стили для описания */
+.product-description {
+  margin: 20px 0;
+}
+
+.product-description h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+.product-description p {
+  line-height: 1.6;
+  color: #555;
+}
+
 /* Адаптивность для мобилок */
 @media (max-width: 768px) {
   .product-container {

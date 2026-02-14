@@ -169,8 +169,51 @@ class Stock(models.Model):
     is_available = models.BooleanField("В наличии", default=True)
 
     class Meta:
-        verbose_name = "Остаток"
+        verbose_name = "запись остатков"
         verbose_name_plural = "Остатки"
 
     def __str__(self):
         return f"Stock for {self.product.name}: {self.quantity}"
+
+
+class SpecificationType(models.Model):
+    """Тип характеристики (например: 'Диагональ экрана', 'Процессор')"""
+    name = models.CharField("Название характеристики", max_length=100, unique=True)
+    slug = models.SlugField("URL", unique=True, blank=True)
+
+    class Meta:
+        verbose_name = "Тип характеристики"
+        verbose_name_plural = "Типы характеристик"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while SpecificationType.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class ProductSpecification(models.Model):
+    """Значение характеристики для конкретного товара"""
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='specifications')
+    spec_type = models.ForeignKey(
+        SpecificationType, on_delete=models.CASCADE, verbose_name="Характеристика")
+    value = models.CharField("Значение", max_length=255)
+
+    class Meta:
+        verbose_name = "элемент характеристик"
+        verbose_name_plural = "Характеристики товаров"
+        ordering = ['spec_type__name']
+        unique_together = ['product', 'spec_type']
+
+    def __str__(self):
+        return f"{self.spec_type.name}: {self.value} ({self.product.name})"
