@@ -1,11 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-__pycache__
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDEs
 .vscode
+.idea/
+*.swp
+*.swo
 
+# Database
 db.sqlite3
+*.sqlite
 
+# Media and static files (if stored locally during development)
 media/
+staticfiles/
 
+# Security and secrets
+.env
+.env.local
+.env.dev
+.env.prod
+*.env
+secrets.json
+*.key
+*.pem
+
+# Dependencies
 requirements.txt
+requirements-dev.txt
+Pipfile
+Pipfile.lock
 
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Local Django settings
+local_settings.py
+settings_local.py
