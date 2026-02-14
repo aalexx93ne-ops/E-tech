@@ -45,3 +45,21 @@
 .apply-btn:hover {
   background: #34a55c;
 }
+
+.hidden-item {
+  display: none;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  color: #3cb46d;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.show-more-btn:hover {
+  text-decoration: underline;
+}

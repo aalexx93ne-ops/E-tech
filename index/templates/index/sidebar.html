@@ -1,8 +1,9 @@
+{% load static %}
 <form method="get" class="sidebar">
   <h3 class="sidebar-title" id="brands-title">Бренды</h3>
-  <ul class="sidebar-list" aria-labelledby="brands-title">
+  <ul class="sidebar-list collapsible" id="brands-list" aria-labelledby="brands-title">
     {% for brand in brands %}
-    <li>
+    <li class="{% if forloop.counter > 5 %}hidden-item{% endif %}">
       <label>
         <input type="checkbox" name="brand" value="{{ brand.slug }}"
                {% if brand.slug in selected_brands %}checked{% endif %}>
@@ -13,11 +14,14 @@
     <li>Бренды не найдены.</li>
     {% endfor %}
   </ul>
+  {% if brands|length > 5 %}
+  <button type="button" class="show-more-btn" onclick="toggleList('brands-list', this)">Показать все ({{ brands|length }})</button>
+  {% endif %}
 
   <h3 class="sidebar-title" id="categories-title">Категории</h3>
-  <ul class="sidebar-list" aria-labelledby="categories-title">
+  <ul class="sidebar-list collapsible" id="categories-list" aria-labelledby="categories-title">
     {% for category in categories %}
-    <li>
+    <li class="{% if forloop.counter > 5 %}hidden-item{% endif %}">
       <label>
         <input type="checkbox" name="category" value="{{ category.slug }}"
                {% if category.slug in selected_categories %}checked{% endif %}>
@@ -28,11 +32,14 @@
     <li>Категории не найдены.</li>
     {% endfor %}
   </ul>
+  {% if categories|length > 5 %}
+  <button type="button" class="show-more-btn" onclick="toggleList('categories-list', this)">Показать все ({{ categories|length }})</button>
+  {% endif %}
 
   <h3 class="sidebar-title" id="tags-title">Теги</h3>
-  <ul class="sidebar-list" aria-labelledby="tags-title">
+  <ul class="sidebar-list collapsible" id="tags-list" aria-labelledby="tags-title">
     {% for tag in tags %}
-    <li>
+    <li class="{% if forloop.counter > 5 %}hidden-item{% endif %}">
       <label>
         <input type="checkbox" name="tag" value="{{ tag.slug }}"
                {% if tag.slug in selected_tags %}checked{% endif %}>
@@ -43,6 +50,9 @@
     <li>Теги не найдены.</li>
     {% endfor %}
   </ul>
+  {% if tags|length > 5 %}
+  <button type="button" class="show-more-btn" onclick="toggleList('tags-list', this)">Показать все ({{ tags|length }})</button>
+  {% endif %}
 
   <h3 class="sidebar-title">Скидка</h3>
   <ul class="sidebar-list">
@@ -57,3 +67,5 @@
 
   <button class="action-btn primary" type="submit">Применить</button>
 </form>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
