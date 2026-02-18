@@ -65,6 +65,10 @@
   gap: 16px;
 }
 
+.icon-btn-large {
+  transform: scale(1.25);
+}
+
 .cart-counter {
   position: absolute;
   top: -5px;

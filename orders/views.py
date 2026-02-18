@@ -18,6 +18,9 @@ def order_create(request):
                 address=form.cleaned_data['address'],
                 city=form.cleaned_data['city'],
             )
+            if request.user.is_authenticated:
+                order.user = request.user
+                order.save()
             for item in cart:
                 OrderItem.objects.create(
                     order=order,
@@ -28,5 +31,15 @@ def order_create(request):
             cart.clear()
             return render(request, 'orders/created.html', {'order': order})
     else:
-        form = OrderCreateForm()
+        initial = {}
+        if request.user.is_authenticated:
+            user = request.user
+            initial = {
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'city': user.city,
+                'address': user.address,
+            }
+        form = OrderCreateForm(initial=initial)
     return render(request, 'orders/create.html', {'cart': cart, 'form': form})

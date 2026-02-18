@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Заказ #{{ order.id }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/profile.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Заказ #{{ order.id }}</h1>
+
+    <div class="profile-container">
+        <div class="order-meta">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Дата заказа</span>
+                    <span class="info-value">{{ order.created|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Статус</span>
+                    <span class="info-value">
+                        {% if order.paid %}
+                            <span class="status-paid">Оплачен</span>
+                        {% else %}
+                            <span class="status-pending">Не оплачен</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Адрес доставки</span>
+                    <span class="info-value">{{ order.city }}, {{ order.address }}</span>
+                </div>
+            </div>
+        </div>
+
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Итого</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.price }} &#8381;</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.get_cost }} &#8381;</td>
+                </tr>
+                {% endfor %}
+                <tr class="total">
+                    <td>Итого</td>
+                    <td></td>
+                    <td></td>
+                    <td>{{ order.get_total_cost }} &#8381;</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="profile-actions">
+            <a href="{% url 'users:profile' %}" class="button">Назад к профилю</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

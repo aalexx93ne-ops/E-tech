@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth account %}
+
+{% block title %}{% trans "Sign In" %}{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <h1>{% trans "Sign In" %}</h1>
+
+  {% if not SOCIALACCOUNT_ONLY %}
+    <form method="post" action="{% url 'account_login' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+      <button type="submit" class="btn btn-primary">{% trans "Sign In" %}</button>
+    </form>
+    <p>
+      <a href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+    </p>
+  {% endif %}
+
+  {% if SOCIALACCOUNT_ENABLED %}
+    <div class="social-login">
+      <h3>{% trans "Or sign in with" %}</h3>
+      {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    </div>
+  {% endif %}
+
+  <p>
+    {% trans "Don't have an account?" %}
+    <a href="{{ signup_url }}">{% trans "Sign up" %}</a>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/profile.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Личный кабинет</h1>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="Аватар">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#E8F0F0"/>
+                            <path d="M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 15.5a4 4 0 0 1 8 0v0.5H8v-0.5z" fill="#9ea7ad"/>
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="profile-name">
+                <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+                <p>{{ user.email }}</p>
+            </div>
+        </div>
+
+        <div class="profile-info">
+            <div class="info-section">
+                <h3>Контактные данные</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Телефон</span>
+                        <span class="info-value">{{ user.phone|default:"Не указан" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Дата рождения</span>
+                        <span class="info-value">{{ user.birth_date|date:"d.m.Y"|default:"Не указана" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Адрес доставки</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Город</span>
+                        <span class="info-value">{{ user.city|default:"Не указан" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Адрес</span>
+                        <span class="info-value">{{ user.address|default:"Не указан" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Почтовый индекс</span>
+                        <span class="info-value">{{ user.postal_code|default:"Не указан" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-actions">
+            <a href="{% url 'users:profile_edit' %}" class="button">Редактировать профиль</a>
+            <a href="{% url 'account_logout' %}" class="button button-logout">Выйти</a>
+        </div>
+    </div>
+
+    {% if orders %}
+    <div class="profile-container">
+        <h2 class="section-title">История заказов</h2>
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Номер</th>
+                    <th>Дата</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.created|date:"d.m.Y H:i" }}</td>
+                    <td>{{ order.get_total_cost }} &#8381;</td>
+                    <td>
+                        {% if order.paid %}
+                            <span class="status-paid">Оплачен</span>
+                        {% else %}
+                            <span class="status-pending">Не оплачен</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'users:order_detail' order.id %}" class="detail-link">Подробнее</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

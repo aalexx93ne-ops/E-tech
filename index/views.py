@@ -1,8 +1,12 @@
 # index/views.py
+from collections import defaultdict
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
+from django.core.cache import cache
 from .models import Product, Category, Brand, Tag, Banner, SpecificationType, ProductSpecification
 from cart.forms import CartAddProductForm
+
+SIDEBAR_CACHE_TTL = 60 * 15  # 15 минут
 
 
 class ProductListView(ListView):
@@ -61,10 +65,24 @@ class ProductListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()
-        context['brands'] = Brand.objects.all()
-        context['tags'] = Tag.objects.all()
-        context['banners'] = Banner.objects.filter(is_active=True)
+
+        # Кэшируем данные сайдбара — они меняются редко
+        sidebar = cache.get('sidebar_data')
+        if sidebar is None:
+            sidebar = {
+                'categories': list(Category.objects.all()),
+                'brands': list(Brand.objects.all()),
+                'tags': list(Tag.objects.all()),
+                'banners': list(Banner.objects.filter(is_active=True)),
+                'spec_filters': self.get_spec_filters(),
+            }
+            cache.set('sidebar_data', sidebar, SIDEBAR_CACHE_TTL)
+
+        context.update(sidebar)
+
+        # selected_values зависят от GET — проставляем после кэша
+        for sf in context.get('spec_filters', []):
+            sf['selected_values'] = self.request.GET.getlist(f'spec_{sf["slug"]}')
 
         context['selected_categories'] = self.request.GET.getlist('category')
         context['selected_brands'] = self.request.GET.getlist('brand')
@@ -73,32 +91,25 @@ class ProductListView(ListView):
         context['price_from'] = self.request.GET.get('price_from')
         context['price_to'] = self.request.GET.get('price_to')
 
-        # Фильтры по характеристикам для сайдбара
-        context['spec_filters'] = self.get_spec_filters()
-
         return context
 
     def get_spec_filters(self):
-        """Получает уникальные значения для каждого типа характеристик"""
-        spec_types = SpecificationType.objects.all()
-        spec_filters = []
+        """Получает уникальные значения для каждого типа характеристик — 1 запрос"""
+        rows = (
+            ProductSpecification.objects
+            .select_related('spec_type')
+            .values_list('spec_type__slug', 'spec_type__name', 'value')
+            .distinct()
+            .order_by('spec_type__name', 'value')
+        )
 
-        for spec_type in spec_types:
-            # Получаем все уникальные значения для этого типа характеристики
-            values = ProductSpecification.objects.filter(
-                spec_type=spec_type
-            ).values_list('value', flat=True).distinct().order_by('value')
+        grouped = defaultdict(lambda: {'values': []})
+        for slug, name, value in rows:
+            grouped[slug]['name'] = name
+            grouped[slug]['slug'] = slug
+            grouped[slug]['values'].append(value)
 
-            if values:
-                selected_values = self.request.GET.getlist(f'spec_{spec_type.slug}')
-                spec_filters.append({
-                    'name': spec_type.name,
-                    'slug': spec_type.slug,
-                    'values': list(values),
-                    'selected_values': selected_values
-                })
-
-        return spec_filters
+        return list(grouped.values())
 
 
 class ProductDetailView(DetailView):

@@ -25,43 +25,33 @@
     </nav>
 
     <div class="menu-icons">
-      <button class="icon-btn">
-        <svg
-          class="profile-icon"
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
-        >
-          <defs>
-            <filter
-              id="profile-shadow"
-              x="-20%"
-              y="-20%"
-              width="140%"
-              height="140%"
-            >
-              <feDropShadow
-                dx="0"
-                dy="1"
-                stdDeviation="0.5"
-                flood-opacity="0.2"
-              />
-            </filter>
-          </defs>
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            fill="#E8F0F0"
-            filter="url(#profile-shadow)"
-          />
-          <path
-            d="M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 15.5a4 4 0 0 1 8 0v0.5H8v-0.5z"
-            fill="#9ea7ad"
-          />
-        </svg>
-      </button>
+      {% if user.is_authenticated %}
+        <a href="{% url 'users:profile' %}" class="icon-btn" title="Личный кабинет">
+          <svg class="profile-icon" width="32" height="32" viewBox="0 0 24 24">
+            <defs>
+              <filter id="profile-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-opacity="0.2"/>
+              </filter>
+            </defs>
+            <circle cx="12" cy="12" r="10" fill="#4CAF50" filter="url(#profile-shadow)"/>
+            <path d="M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 15.5a4 4 0 0 1 8 0v0.5H8v-0.5z" fill="#fff"/>
+          </svg>
+        </a>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="icon-btn icon-btn-large" title="Войти">
+          <svg class="profile-icon" width="40" height="40" viewBox="0 0 24 24">
+            <defs>
+              <filter id="profile-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-opacity="0.2"/>
+              </filter>
+            </defs>
+            <circle cx="12" cy="12" r="10" fill="#E8F0F0" filter="url(#profile-shadow)"/>
+            <path d="M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 15.5a4 4 0 0 1 8 0v0.5H8v-0.5z" fill="#9ea7ad"/>
+          </svg>
+        </a>
+      {% endif %}
 
+      {% if user.is_authenticated %}
       <div class="menu_icons_cart-wrap">
         <a href="{% url 'cart:cart_detail' %}" class="icon-btn">
           <svg class="cart-icon" width="32" height="32" viewBox="0 0 24 24">
@@ -100,6 +90,7 @@
           {% endif %}
         </a>
       </div>
+      {% endif %}
     </div>
   </div>
 

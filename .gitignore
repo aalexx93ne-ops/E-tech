@@ -52,6 +52,10 @@ secrets.json
 *.key
 *.pem
 
+# OAuth client secrets
+client_secret*.json
+*client_secret*.json
+
 # Dependencies
 requirements.txt
 requirements-dev.txt
@@ -80,3 +84,6 @@ htmlcov/
 # Local Django settings
 local_settings.py
 settings_local.py
+
+# Security audit reports
+fixes.md
