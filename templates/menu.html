@@ -51,7 +51,6 @@
         </a>
       {% endif %}
 
-      {% if user.is_authenticated %}
       <div class="menu_icons_cart-wrap">
         <a href="{% url 'cart:cart_detail' %}" class="icon-btn">
           <svg class="cart-icon" width="32" height="32" viewBox="0 0 24 24">
@@ -85,12 +84,11 @@
               stroke-width="1.5"
             />
           </svg>
-          {% if cart %}
+          {% if cart|length %}
             <div class="cart-counter">{{ cart|length }}</div>
           {% endif %}
         </a>
       </div>
-      {% endif %}
     </div>
   </div>
 
