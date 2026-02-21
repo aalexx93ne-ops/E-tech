@@ -17,7 +17,7 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         queryset = Product.objects.select_related(
-            'category', 'brand', 'discount', 'stock').prefetch_related('images', 'tags', 'specifications__spec_type')
+            'category', 'brand', 'discount')
 
         category_slugs = self.request.GET.getlist('category')
         brand_slugs = self.request.GET.getlist('brand')
@@ -116,6 +116,11 @@ class ProductDetailView(DetailView):
     model = Product
     template_name = 'index/product_detail.html'
     context_object_name = 'product'
+
+    def get_queryset(self):
+        return Product.objects.select_related(
+            'category', 'brand', 'discount', 'stock'
+        ).prefetch_related('images', 'specifications__spec_type')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 from index.models import Product
 
@@ -21,13 +22,15 @@ class DBCart(models.Model):
         return f'Корзина {self.user.email}'
 
     def get_total_price(self):
-        return sum(item.get_total_price() for item in self.items.all())
+        return sum(item.get_total_price() for item in
+                   self.items.select_related('product', 'product__discount'))
 
     def __bool__(self):
         return True
 
     def __len__(self):
-        return sum(item.quantity for item in self.items.all())
+        result = self.items.aggregate(total=Sum('quantity'))
+        return result['total'] or 0
 
 
 class DBCartItem(models.Model):

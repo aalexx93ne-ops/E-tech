@@ -84,9 +84,11 @@
               stroke-width="1.5"
             />
           </svg>
-          {% if cart|length %}
-            <div class="cart-counter">{{ cart|length }}</div>
+          {% with cart_len=cart|length %}
+          {% if cart_len %}
+            <div class="cart-counter">{{ cart_len }}</div>
           {% endif %}
+          {% endwith %}
         </a>
       </div>
     </div>

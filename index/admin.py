@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Category, Brand, Discount, Product, ProductImage, Review, Stock, SpecificationType, ProductSpecification
+from .models import (
+    Category, Brand, Discount, Product, ProductImage, Review, Stock,
+    SpecificationType, ProductSpecification,
+)
 
 
 @admin.register(Category)
@@ -39,12 +42,16 @@ class ProductAdmin(admin.ModelAdmin):
                     'get_final_price', 'discount', 'stock_quantity')
     list_editable = ('price',)
     list_filter = ('category', 'brand', 'discount')
+    list_select_related = ('category', 'brand', 'discount', 'stock')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
     inlines = [StockInline, ProductSpecificationInline]
 
     def stock_quantity(self, obj):
-        return obj.stock.quantity if hasattr(obj, 'stock') else 0
+        try:
+            return obj.stock.quantity
+        except Stock.DoesNotExist:
+            return 0
     stock_quantity.short_description = 'Количество на складе'
 
 
@@ -58,6 +65,7 @@ class SpecificationTypeAdmin(admin.ModelAdmin):
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
     list_display = ('product', 'spec_type', 'value')
+    list_select_related = ('product', 'spec_type')
     list_filter = ('spec_type',)
     search_fields = ('product__name', 'spec_type__name', 'value')
     autocomplete_fields = ['product', 'spec_type']
@@ -66,16 +74,19 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = ('product', 'alt_text')
+    list_select_related = ('product',)
 
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ('product', 'name', 'rating', 'created_at')
+    list_select_related = ('product',)
     list_filter = ('rating',)
 
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     list_display = ('product', 'quantity', 'is_available')
+    list_select_related = ('product',)
     list_editable = ('quantity', 'is_available')
     list_display_links = ('product',)

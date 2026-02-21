@@ -22,7 +22,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in cart %}
+                {% for item in cart_items %}
                     <tr>
                         <td>{{ item.product.name }}</td>
                         <td>{{ item.quantity }}</td>
@@ -32,7 +32,7 @@
                 <tr class="total">
                     <td>Итого</td>
                     <td></td>
-                    <td>{{ cart.get_total_price }} ₽</td>
+                    <td>{{ cart_total_price }} ₽</td>
                 </tr>
             </tbody>
         </table>

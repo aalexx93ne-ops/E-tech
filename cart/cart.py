@@ -10,17 +10,21 @@ class Cart:
         self.session = request.session
         self.user = request.user if request.user.is_authenticated else None
 
-        # Сессионная корзина — инициализируем всегда (нужна для мержа при логине)
-        cart = self.session.get(settings.CART_SESSION_ID)
-        if not cart:
-            cart = self.session[settings.CART_SESSION_ID] = {}
-        self.cart = cart
+        # Сессионная корзина — для анонимов и для мержа при логине
+        self.cart = self.session.get(settings.CART_SESSION_ID, {})
 
-        if self.user:
-            from .models import DBCart
-            self.db_cart, _ = DBCart.objects.get_or_create(user=self.user)
-        else:
-            self.db_cart = None
+        self._db_cart_cached = None
+        self._db_cart_loaded = False
+
+    @property
+    def db_cart(self):
+        """Ленивая загрузка БД-корзины — запрос только при реальном обращении."""
+        if not self._db_cart_loaded:
+            if self.user:
+                from .models import DBCart
+                self._db_cart_cached, _ = DBCart.objects.get_or_create(user=self.user)
+            self._db_cart_loaded = True
+        return self._db_cart_cached
 
     def add(self, product, quantity=1, update_quantity=False):
         if self.db_cart is not None:
@@ -89,10 +93,10 @@ class Cart:
                 yield item
 
     def __len__(self):
-        if self.db_cart is not None:
+        if self.user:
             from .models import DBCartItem
             result = DBCartItem.objects.filter(
-                cart=self.db_cart
+                cart__user=self.user
             ).aggregate(total=Sum('quantity'))
             return result['total'] or 0
         return sum(item['quantity'] for item in self.cart.values())
@@ -115,10 +119,12 @@ class Cart:
             self.db_cart.items.all().delete()
             self.db_cart.save()
         else:
-            del self.session[settings.CART_SESSION_ID]
-            self.save()
+            self.session.pop(settings.CART_SESSION_ID, None)
+            self.cart = {}
+            self.session.modified = True
 
     def save(self):
+        self.session[settings.CART_SESSION_ID] = self.cart
         self.session.modified = True
 
     def merge_session_cart(self):

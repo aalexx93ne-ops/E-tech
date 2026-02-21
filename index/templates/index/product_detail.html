@@ -15,12 +15,13 @@
   <div class="product-info">
     <h1>{{ product.name }}</h1>
 
-    {% if product.specifications.exists %}
+    {% with specs=product.specifications.all %}
+    {% if specs %}
     <div class="product-specifications">
       <h3>Характеристики</h3>
       <table class="specs-table">
         <tbody>
-          {% for spec in product.specifications.all %}
+          {% for spec in specs %}
           <tr>
             <td class="spec-name">{{ spec.spec_type.name }}</td>
             <td class="spec-value">{{ spec.value }}</td>
@@ -30,6 +31,7 @@
       </table>
     </div>
     {% endif %}
+    {% endwith %}
 
     <div class="product-description">
       <h3>Описание</h3>
