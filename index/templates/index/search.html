@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if query %}Поиск: {{ query }} | E-Tech{% else %}Поиск товаров | E-Tech{% endif %}{% endblock %}
+
+{% block content %}
+{% include 'index/partials/search_content.html' %}
+{% endblock %}

@@ -86,7 +86,15 @@
           </svg>
           {% with cart_len=cart|length %}
           {% if cart_len %}
-            <div class="cart-counter">{{ cart_len }}</div>
+            <div class="cart-counter" id="cart-counter"
+                 hx-get="{% url 'cart:cart_counter' %}"
+                 hx-trigger="cartUpdated from:body"
+                 hx-swap="outerHTML">{{ cart_len }}</div>
+          {% else %}
+            <div class="cart-counter" id="cart-counter" style="display:none"
+                 hx-get="{% url 'cart:cart_counter' %}"
+                 hx-trigger="cartUpdated from:body"
+                 hx-swap="outerHTML">0</div>
           {% endif %}
           {% endwith %}
         </a>
@@ -95,8 +103,13 @@
   </div>
 
   <div class="search-bar">
-    <form action="{% url 'index:search' %}" method="get" class="search-container">
-      <input type="text" name="q" class="search-input" placeholder="Поиск..." />
+    <form action="{% url 'index:search' %}" method="get" class="search-container"
+          hx-get="{% url 'index:search' %}"
+          hx-target="#main-content"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          hx-trigger="submit, keyup changed delay:400ms from:find input[name=q]">
+      <input type="text" name="q" class="search-input" placeholder="Поиск..." value="{{ query }}" />
     </form>
   </div>
 </header>

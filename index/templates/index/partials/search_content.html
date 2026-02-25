@@ -1,0 +1,9 @@
+{% load static %}
+<div class="catalog-layout">
+  <aside class="catalog-sidebar" aria-label="Фильтры каталога">
+    {% include 'index/sidebar.html' %}
+  </aside>
+  <div class="catalog-main" id="search-results">
+    {% include 'index/partials/search_results.html' %}
+  </div>
+</div>

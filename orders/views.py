@@ -5,14 +5,11 @@ from .models import Order, OrderItem
 
 def order_create(request):
     cart = Cart(request)
+    if len(cart) == 0:
+        return redirect('cart:cart_detail')
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
-            if len(cart) == 0:
-                return render(request, 'orders/create.html', {
-                    'cart': cart, 'cart_items': [], 'cart_total_price': 0,
-                    'form': form, 'show_modal': True,
-                })
             order = Order.objects.create(
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],

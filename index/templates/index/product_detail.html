@@ -47,7 +47,10 @@
       {% endif %}
     </div>
 
-    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="add-to-cart-form">
+    <form hx-post="{% url 'cart:cart_add' product.id %}"
+          hx-target="#cart-counter"
+          hx-swap="outerHTML"
+          class="add-to-cart-form">
         {% csrf_token %}
         {{ cart_product_form }}
         <button type="submit" class="action-btn primary">Добавить в корзину</button>

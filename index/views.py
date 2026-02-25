@@ -3,7 +3,7 @@ from collections import defaultdict
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from django.core.cache import cache
-from .models import Product, Category, Brand, Tag, Banner, SpecificationType, ProductSpecification
+from .models import Product, Category, Brand, Tag, Banner, ProductSpecification
 from cart.forms import CartAddProductForm
 
 SIDEBAR_CACHE_TTL = 60 * 15  # 15 минут
@@ -29,13 +29,13 @@ class ProductListView(ListView):
         # Фильтр по цене
         if price_from:
             try:
-                queryset = queryset.filter(price__gte=float(price_from))
-            except ValueError:
+                queryset = queryset.filter(price__gte=float(self._clean_price(price_from)))
+            except (ValueError, TypeError):
                 pass
         if price_to:
             try:
-                queryset = queryset.filter(price__lte=float(price_to))
-            except ValueError:
+                queryset = queryset.filter(price__lte=float(self._clean_price(price_to)))
+            except (ValueError, TypeError):
                 pass
 
         if category_slugs:
@@ -63,8 +63,19 @@ class ProductListView(ListView):
 
         return queryset.distinct()
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if request.headers.get('HX-Request'):
+            from django.template.response import TemplateResponse
+            partial = getattr(self, 'htmx_partial_template', 'index/partials/product_list.html')
+            return TemplateResponse(request, partial, response.context_data)
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop('page', None)
+        context['query_string'] = params.urlencode()
 
         # Кэшируем данные сайдбара — они меняются редко
         sidebar = cache.get('sidebar_data')
@@ -92,6 +103,19 @@ class ProductListView(ListView):
         context['price_to'] = self.request.GET.get('price_to')
 
         return context
+
+    @staticmethod
+    def _clean_price(value):
+        """
+        Очищает ввод цены: '35 000,50' → '35000.50', '40.000' → '40000'.
+        Точка/запятая + ровно 3 цифры в конце = разделитель тысяч.
+        """
+        import re
+        value = value.replace(' ', '')
+        # 40.000 или 35,000 → разделитель тысяч, убираем
+        value = re.sub(r'[.,](\d{3})(?!\d)', r'\1', value)
+        # Оставшаяся запятая — десятичный разделитель
+        return value.replace(',', '.')
 
     def get_spec_filters(self):
         """Получает уникальные значения для каждого типа характеристик — 1 запрос"""
@@ -129,34 +153,30 @@ class ProductDetailView(DetailView):
 
 
 class ProductSearchView(ProductListView):
-    """
-    Представление для поиска товаров.
-    Наследуется от ProductListView, чтобы сохранить пагинацию и контекст (фильтры и т.д.).
-    """
+    template_name = 'index/search.html'
+    htmx_partial_template = 'index/partials/search_content.html'
+
     def get_queryset(self):
         # Начинаем с базового queryset (с select_related/prefetch_related)
         queryset = Product.objects.select_related(
             'category', 'brand', 'discount', 'stock').prefetch_related('images', 'tags')
-        
+
         query = self.request.GET.get('q')
-        
+
         if query:
             # Фильтруем по названию или описанию (регистронезависимо)
             queryset = queryset.filter(
-                Q(name__icontains=query) | 
+                Q(name__icontains=query) |
                 Q(description__icontains=query)
             )
         else:
-            # Если запрос пустой, можно вернуть пустой список или все товары
-            # Лучше вернуть пустой список или сообщение, но пока вернем все
-            pass
-            
+            # Если запрос пустой — возвращаем пустой queryset
+            queryset = Product.objects.none()
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Добавляем поисковый запрос в контекст, чтобы отобразить его в шаблоне
         context['query'] = self.request.GET.get('q')
-        # Убираем баннеры на странице поиска, чтобы не отвлекать
-        context['banners'] = None
         return context

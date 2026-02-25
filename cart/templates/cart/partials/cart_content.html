@@ -1,0 +1,62 @@
+{% load static %}
+<table class="cart-table">
+    <thead>
+        <tr>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Удалить</th>
+            <th>Цена</th>
+            <th>Итого</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in cart_items %}
+        <tr>
+            <td>{{ item.product.name }}</td>
+            <td>
+                <form hx-post="{% url 'cart:cart_add' item.product.id %}"
+                      hx-target="#cart-content"
+                      hx-swap="innerHTML"
+                      class="update-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="update" value="true">
+                    <select name="quantity">
+                        {% for i in quantity_range %}
+                            <option value="{{ i }}" {% if i == item.quantity %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="button small">Обновить</button>
+                </form>
+            </td>
+            <td>
+                <form hx-post="{% url 'cart:cart_remove' item.product.id %}"
+                      hx-target="#cart-content"
+                      hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <button type="submit" class="remove-link">Удалить</button>
+                </form>
+            </td>
+            <td>{{ item.price }} ₽</td>
+            <td>{{ item.total_price }} ₽</td>
+        </tr>
+        {% endfor %}
+        <tr class="total">
+            <td>Итого</td>
+            <td colspan="3"></td>
+            <td class="num">{{ cart_total_price }} ₽</td>
+        </tr>
+    </tbody>
+</table>
+<div class="cart-actions">
+    <a href="{% url 'index:index' %}" class="button">Продолжить покупки</a>
+    {% if cart_items %}
+    <form hx-post="{% url 'cart:cart_clear' %}"
+          hx-target="#cart-content"
+          hx-swap="innerHTML"
+          hx-confirm="Очистить корзину?">
+        {% csrf_token %}
+        <button type="submit" class="button">Очистить корзину</button>
+    </form>
+    <a href="{% url 'orders:order_create' %}" class="button checkout">Оформить заказ</a>
+    {% endif %}
+</div>

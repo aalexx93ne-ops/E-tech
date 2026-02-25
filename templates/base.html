@@ -18,12 +18,12 @@
     <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
     {% block extra_head %}{% endblock %}
   </head>
-  <body>
+  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
     {% include 'menu.html' %}
 
-    <main>
+    <main id="main-content">
       {% block content %}
-      <!-- Контент страниц будет вставляться сюда -->
       {% endblock %}
     </main>
 

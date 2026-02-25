@@ -1,0 +1,28 @@
+{% load static %}
+{% for product in products %}
+  {% include 'index/product_card.html' %}
+{% empty %}
+  <p class="empty-message">Нет товаров для отображения.</p>
+{% endfor %}
+
+{% if is_paginated %}
+<nav class="pagination" aria-label="Пагинация">
+  {% if page_obj.has_previous %}
+    <a hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}"
+       hx-target="#catalog-products"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       class="page-link">← Назад</a>
+  {% endif %}
+
+  <span class="page-current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+  {% if page_obj.has_next %}
+    <a hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}"
+       hx-target="#catalog-products"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       class="page-link">Вперёд →</a>
+  {% endif %}
+</nav>
+{% endif %}

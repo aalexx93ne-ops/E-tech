@@ -1,12 +1,31 @@
 {% load static %}
-<form method="get" class="sidebar">
+<form id="filter-form"
+      hx-get="{% url 'index:index' %}"
+      hx-target="#catalog-products"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-trigger="change, submit"
+      class="sidebar">
+
   <h3 class="sidebar-title">Цена</h3>
   <div class="price-filter">
-    <input type="number" name="price_from" placeholder="От" min="0" step="0.01"
-           value="{{ price_from|default:'' }}">
+    <input type="text" inputmode="decimal" name="price_from" placeholder="От 0"
+           value="{{ price_from|default:'' }}" autocomplete="off"
+           hx-trigger="keyup changed delay:600ms"
+           hx-get="{% url 'index:index' %}"
+           hx-target="#catalog-products"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           hx-include="#filter-form">
     <span class="price-separator">—</span>
-    <input type="number" name="price_to" placeholder="До" min="0" step="0.01"
-           value="{{ price_to|default:'' }}">
+    <input type="text" inputmode="decimal" name="price_to" placeholder="До 999 999"
+           value="{{ price_to|default:'' }}" autocomplete="off"
+           hx-trigger="keyup changed delay:600ms"
+           hx-get="{% url 'index:index' %}"
+           hx-target="#catalog-products"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           hx-include="#filter-form">
   </div>
 
   <h3 class="sidebar-title" id="brands-title">Бренды</h3>

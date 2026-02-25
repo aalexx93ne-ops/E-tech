@@ -1,0 +1,50 @@
+{% if query %}
+  <header class="catalog-header">
+    <h1 class="catalog-title">Результаты поиска: "{{ query }}"</h1>
+    <p class="search-info">Найдено товаров: {{ page_obj.paginator.count|default:0 }}</p>
+  </header>
+{% else %}
+  <header class="catalog-header">
+    <h1 class="catalog-title">Поиск товаров</h1>
+    <p class="search-info">Введите запрос в поисковую строку выше</p>
+  </header>
+{% endif %}
+
+<div class="catalog-products" id="catalog-products">
+  {% if query %}
+    {% for product in products %}
+      {% include 'index/product_card.html' %}
+    {% empty %}
+      <p class="empty-message">Ничего не найдено по запросу "{{ query }}"</p>
+      <p class="empty-hint">Попробуйте изменить запрос или воспользуйтесь фильтрами в каталоге</p>
+    {% endfor %}
+  {% else %}
+    <div class="search-empty">
+      <svg class="search-empty-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="7" stroke="#9ea7ad" stroke-width="2"/>
+        <path d="M20 20L16 16" stroke="#9ea7ad" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>Введите поисковый запрос, чтобы найти товары</p>
+    </div>
+  {% endif %}
+
+  {% if is_paginated %}
+  <nav class="pagination" aria-label="Пагинация">
+    {% if page_obj.has_previous %}
+      <a hx-get="?q={{ query }}&page={{ page_obj.previous_page_number }}"
+         hx-target="#search-results"
+         hx-swap="innerHTML"
+         hx-push-url="true"
+         class="page-link">← Назад</a>
+    {% endif %}
+    <span class="page-current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a hx-get="?q={{ query }}&page={{ page_obj.next_page_number }}"
+         hx-target="#search-results"
+         hx-swap="innerHTML"
+         hx-push-url="true"
+         class="page-link">Вперёд →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</div>

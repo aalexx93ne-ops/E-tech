@@ -23,12 +23,8 @@
     </header>
 
     <!-- Список товаров -->
-    <div class="catalog-products">
-      {% for product in products %}
-        {% include 'index/product_card.html' %}
-      {% empty %}
-        <p class="empty-message">Нет товаров для отображения.</p>
-      {% endfor %}
+    <div class="catalog-products" id="catalog-products">
+      {% include 'index/partials/product_list.html' %}
     </div>
   </div>
 

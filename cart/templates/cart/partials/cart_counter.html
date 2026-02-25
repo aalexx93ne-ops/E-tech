@@ -1,0 +1,13 @@
+{% load static %}
+{% url 'cart:cart_counter' as counter_url %}
+{% if cart_count %}
+  <div class="cart-counter" id="cart-counter"
+       hx-get="{{ counter_url }}"
+       hx-trigger="cartUpdated from:body"
+       hx-swap="outerHTML">{{ cart_count }}</div>
+{% else %}
+  <div class="cart-counter" id="cart-counter" style="display:none"
+       hx-get="{{ counter_url }}"
+       hx-trigger="cartUpdated from:body"
+       hx-swap="outerHTML">0</div>
+{% endif %}

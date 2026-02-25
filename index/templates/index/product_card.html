@@ -27,7 +27,9 @@
 
   <!-- Кнопки действия вне ссылки -->
   <div class="product-actions">
-    <form action="{% url 'cart:cart_add' product.id %}" method="post">
+    <form hx-post="{% url 'cart:cart_add' product.id %}"
+          hx-target="#cart-counter"
+          hx-swap="outerHTML">
         {% csrf_token %}
         <input type="hidden" name="quantity" value="1">
         <button type="submit" class="action-btn primary" title="Купить">Купить</button>

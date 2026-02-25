@@ -5,61 +5,13 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'cart/css/cart.css' %}" />
-<script src="{% static 'js/cart.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <h1>Ваша корзина</h1>
-    <table class="cart-table">
-        <thead>
-            <tr>
-                <th>Товар</th>
-                <th>Количество</th>
-                <th>Удалить</th>
-                <th>Цена</th>
-                <th>Итого</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-                {% with product=item.product %}
-                    <tr>
-                        <td>{{ product.name }}</td>
-                        <td>
-                            <form action="{% url 'cart:cart_add' product.id %}" method="post" class="update-form">
-                                {{ item.update_quantity_form.quantity }}
-                                {{ item.update_quantity_form.update }}
-                                <input type="submit" value="Обновить" class="button small">
-                                {% csrf_token %}
-                            </form>
-                        </td>
-                        <td><a href="{% url 'cart:cart_remove' product.id %}" class="remove-link">Удалить</a></td>
-                        <td>{{ item.price }} ₽</td>
-                        <td>{{ item.total_price }} ₽</td>
-                    </tr>
-                {% endwith %}
-            {% endfor %}
-            <tr class="total">
-                <td>Итого</td>
-                <td colspan="3"></td>
-                <td class="num">{{ cart_total_price }} ₽</td>
-            </tr>
-        </tbody>
-    </table>
-    <div class="cart-actions">
-        <a href="{% url 'index:index' %}" class="button">Продолжить покупки</a>
-        <a href="{% url 'orders:order_create' %}" class="button checkout">Оформить заказ</a>
-    </div>
-
-    <!-- Модальное окно для пустой корзины -->
-    <div id="empty-cart-modal" class="cart-modal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <h2>Корзина пуста</h2>
-            <p>Невозможно оформить заказ, так как корзина пуста. Добавьте товары в корзину.</p>
-            <button id="close-modal" class="button">OK</button>
-        </div>
+    <div id="cart-content">
+        {% include 'cart/partials/cart_content.html' %}
     </div>
 </div>
 {% endblock %}
