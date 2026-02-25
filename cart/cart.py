@@ -88,13 +88,17 @@ class Cart:
         else:
             product_ids = self.cart.keys()
             products = Product.objects.filter(id__in=product_ids)
-            cart = self.cart.copy()
-            for product in products:
-                cart[str(product.id)]['product'] = product
-            for item in cart.values():
-                item['price'] = Decimal(item['price'])
-                item['total_price'] = item['price'] * item['quantity']
-                yield item
+            products_dict = {str(p.id): p for p in products}
+            for product_id, data in self.cart.items():
+                product = products_dict.get(product_id)
+                if product:
+                    price = Decimal(data['price'])
+                    yield {
+                        'product': product,
+                        'price': price,
+                        'quantity': data['quantity'],
+                        'total_price': price * data['quantity'],
+                    }
 
     def __len__(self):
         if self.user:
