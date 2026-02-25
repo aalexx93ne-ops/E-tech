@@ -54,12 +54,16 @@ class Cart:
             self.save()
 
     def remove(self, product):
-        if self.db_cart is not None:
+        if self.user:
             from .models import DBCartItem
-            DBCartItem.objects.filter(
-                cart=self.db_cart, product=product
-            ).delete()
-            self.db_cart.save()
+            db_cart = self.db_cart
+            if db_cart is not None:
+                DBCartItem.objects.filter(
+                    cart=db_cart, product=product
+                ).delete()
+                # Сбрасываем кэш, чтобы при следующей итерации загрузились актуальные данные
+                self._db_cart_cached = None
+                self._db_cart_loaded = False
         else:
             product_id = str(product.id)
             if product_id in self.cart:
@@ -117,7 +121,9 @@ class Cart:
     def clear(self):
         if self.db_cart is not None:
             self.db_cart.items.all().delete()
-            self.db_cart.save()
+            # Сбрасываем кэш
+            self._db_cart_cached = None
+            self._db_cart_loaded = False
         else:
             self.session.pop(settings.CART_SESSION_ID, None)
             self.cart = {}
