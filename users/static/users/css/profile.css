@@ -112,23 +112,17 @@
 }
 
 /* Order status badges */
-.status-paid {
-    color: #166534;
-    background: #dcfce7;
+.order-status {
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 0.85rem;
     font-weight: 500;
 }
-
-.status-pending {
-    color: #92400e;
-    background: #fef3c7;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
+.status-new       { color: #1e40af; background: #dbeafe; }
+.status-confirmed { color: #92400e; background: #fef3c7; }
+.status-shipped   { color: #5b21b6; background: #ede9fe; }
+.status-delivered { color: #166534; background: #dcfce7; }
+.status-cancelled { color: #991b1b; background: #fee2e2; }
 
 .detail-link {
     color: #4caf9f;

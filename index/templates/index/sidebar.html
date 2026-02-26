@@ -113,6 +113,20 @@
     </li>
   </ul>
 
+  <h3 class="sidebar-title">Сортировка</h3>
+  <select name="sort" class="sort-select"
+          hx-get="{% url 'index:index' %}"
+          hx-target="#catalog-products"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          hx-include="#filter-form"
+          hx-trigger="change">
+    <option value=""         {% if current_sort == '' %}selected{% endif %}>По умолчанию</option>
+    <option value="price_asc"  {% if current_sort == 'price_asc' %}selected{% endif %}>Цена: по возрастанию</option>
+    <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Цена: по убыванию</option>
+    <option value="new"        {% if current_sort == 'new' %}selected{% endif %}>Сначала новые</option>
+  </select>
+
   <button class="action-btn primary" type="submit">Применить</button>
 </form>
 

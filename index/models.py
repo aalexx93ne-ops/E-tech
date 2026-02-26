@@ -102,6 +102,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = "Товар"
         verbose_name_plural = "Товары"
+        ordering = ['-id']
 
     def get_final_price(self):
         if self.discount and self.discount.is_active():

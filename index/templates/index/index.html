@@ -17,6 +17,19 @@
       {% include 'index/hero_section.html' %}
     </div>
 
+    <!-- Хлебные крошки -->
+    {% if selected_categories or selected_brands %}
+    <nav class="breadcrumbs" aria-label="Навигация">
+      <a href="{% url 'index:index' %}">Каталог</a>
+      {% for cat in categories %}
+        {% if cat.slug in selected_categories %}
+          <span class="breadcrumb-sep">›</span>
+          <span class="breadcrumb-current">{{ cat.name }}</span>
+        {% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+
     <!-- Заголовок каталога -->
     <header class="catalog-header">
       <h1 class="catalog-title">Каталог товаров</h1>

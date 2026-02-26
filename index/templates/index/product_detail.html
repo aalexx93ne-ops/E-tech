@@ -4,6 +4,15 @@
 {% block title %}{{ product.name }} | E-Tech{% endblock %}
 
 {% block content %}
+<nav class="breadcrumbs" aria-label="Навигация">
+  <a href="{% url 'index:index' %}">Каталог</a>
+  {% if product.category %}
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'index:index' %}?category={{ product.category.slug }}">{{ product.category.name }}</a>
+  {% endif %}
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">{{ product.name }}</span>
+</nav>
 <div class="product-container">
   <div class="product-image">
     {% if product.main_image %}

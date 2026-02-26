@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cart.context_processors.cart',
+                'index.context_processors.search_query',
             ],
         },
     },
@@ -130,7 +131,7 @@ USE_THOUSAND_SEPARATOR = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
@@ -173,8 +174,8 @@ ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 # Skip intermediate confirmation page for social login
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-# Logout without confirmation
-ACCOUNT_LOGOUT_ON_GET = True
+# Logout requires POST (CSRF protection)
+ACCOUNT_LOGOUT_ON_GET = False
 
 # Social account settings
 SOCIALACCOUNT_PROVIDERS = {
@@ -196,3 +197,12 @@ SOCIALACCOUNT_PROVIDERS = {
 # Login/Logout redirects
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Email
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')

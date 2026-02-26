@@ -108,7 +108,7 @@ class OrderCreateViewTest(TestCase):
             'address': 'ул. Ленина, 1',
             'city': 'Москва',
         })
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(Order.objects.exists())
         order = Order.objects.first()
         self.assertEqual(order.items.count(), 1)

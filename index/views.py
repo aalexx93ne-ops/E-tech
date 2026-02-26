@@ -61,7 +61,18 @@ class ProductListView(ListView):
                     specifications__value__in=values
                 )
 
-        return queryset.distinct()
+        queryset = queryset.distinct()
+
+        sort = self.request.GET.get('sort', '')
+        sort_map = {
+            'price_asc':  'price',
+            'price_desc': '-price',
+            'new':        '-id',
+        }
+        if sort in sort_map:
+            queryset = queryset.order_by(sort_map[sort])
+
+        return queryset
 
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
@@ -91,9 +102,11 @@ class ProductListView(ListView):
 
         context.update(sidebar)
 
-        # selected_values зависят от GET — проставляем после кэша
-        for sf in context.get('spec_filters', []):
-            sf['selected_values'] = self.request.GET.getlist(f'spec_{sf["slug"]}')
+        # selected_values зависят от GET — копируем список чтобы не мутировать кэш
+        context['spec_filters'] = [
+            {**sf, 'selected_values': self.request.GET.getlist(f'spec_{sf["slug"]}')}
+            for sf in context.get('spec_filters', [])
+        ]
 
         context['selected_categories'] = self.request.GET.getlist('category')
         context['selected_brands'] = self.request.GET.getlist('brand')
@@ -101,6 +114,7 @@ class ProductListView(ListView):
         context['discount_only'] = self.request.GET.get('discount') == '1'
         context['price_from'] = self.request.GET.get('price_from')
         context['price_to'] = self.request.GET.get('price_to')
+        context['current_sort'] = self.request.GET.get('sort', '')
 
         return context
 

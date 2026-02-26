@@ -1,14 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from orders.models import Order
 from .forms import UserProfileForm
+
+ORDERS_PER_PAGE = 10
 
 
 @login_required
 def profile_view(request):
-    orders = (Order.objects.filter(user=request.user)
-              .prefetch_related('items')
-              .order_by('-created'))
+    orders_qs = (Order.objects.filter(user=request.user)
+                 .prefetch_related('items')
+                 .order_by('-created'))
+    paginator = Paginator(orders_qs, ORDERS_PER_PAGE)
+    page = request.GET.get('page', 1)
+    orders = paginator.get_page(page)
     return render(request, 'users/profile.html', {
         'orders': orders,
     })

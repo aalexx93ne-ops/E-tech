@@ -27,7 +27,10 @@ def _htmx_cart_response(request, ctx):
 def cart_add(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    quantity = int(request.POST.get('quantity', 1))
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+    except (ValueError, TypeError):
+        quantity = 1
     update = request.POST.get('update') in ('true', 'True', '1')
     cart.add(product=product, quantity=quantity, update_quantity=update)
 

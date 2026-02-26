@@ -19,14 +19,9 @@
                     <span class="info-value">{{ order.created|date:"d.m.Y H:i" }}</span>
                 </div>
                 <div class="info-item">
+                    {% load order_tags %}
                     <span class="info-label">Статус</span>
-                    <span class="info-value">
-                        {% if order.paid %}
-                            <span class="status-paid">Оплачен</span>
-                        {% else %}
-                            <span class="status-pending">Не оплачен</span>
-                        {% endif %}
-                    </span>
+                    <span class="info-value">{% status_badge order %}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Адрес доставки</span>

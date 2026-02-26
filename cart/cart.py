@@ -86,10 +86,16 @@ class Cart:
                     'total_price': item.get_total_price(),
                 }
         else:
-            product_ids = self.cart.keys()
+            product_ids = list(self.cart.keys())
             products = Product.objects.filter(id__in=product_ids)
             products_dict = {str(p.id): p for p in products}
-            for product_id, data in self.cart.items():
+            # Удаляем из сессии товары, которых больше нет в БД
+            stale_ids = [pid for pid in product_ids if pid not in products_dict]
+            if stale_ids:
+                for pid in stale_ids:
+                    del self.cart[pid]
+                self.save()
+            for product_id, data in list(self.cart.items()):
                 product = products_dict.get(product_id)
                 if product:
                     price = Decimal(data['price'])
