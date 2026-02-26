@@ -3,10 +3,15 @@ from collections import defaultdict
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from django.core.cache import cache
-from .models import Product, Category, Brand, Tag, Banner, ProductSpecification
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+import logging
+from .models import Product, Category, Brand, Tag, Banner, ProductSpecification, SpecificationType
 from cart.forms import CartAddProductForm
 
+logger = logging.getLogger(__name__)
 SIDEBAR_CACHE_TTL = 60 * 15  # 15 минут
+MAX_PRICE_VALUE = 10_000_000  # Максимальная цена для защиты от DoS
 
 
 class ProductListView(ListView):
@@ -26,16 +31,26 @@ class ProductListView(ListView):
         price_from = self.request.GET.get('price_from')
         price_to = self.request.GET.get('price_to')
 
-        # Фильтр по цене
+        # Фильтр по цене с валидацией (защита от DoS)
         if price_from:
             try:
-                queryset = queryset.filter(price__gte=float(self._clean_price(price_from)))
-            except (ValueError, TypeError):
+                price_val = float(self._clean_price(price_from))
+                if price_val > MAX_PRICE_VALUE:
+                    logger.warning(f"Попытка фильтрации с чрезмерной ценой: {price_from}")
+                    price_val = MAX_PRICE_VALUE
+                queryset = queryset.filter(price__gte=price_val)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Некорректное значение price_from: {price_from}, ошибка: {e}")
                 pass
         if price_to:
             try:
-                queryset = queryset.filter(price__lte=float(self._clean_price(price_to)))
-            except (ValueError, TypeError):
+                price_val = float(self._clean_price(price_to))
+                if price_val > MAX_PRICE_VALUE:
+                    logger.warning(f"Попытка фильтрации с чрезмерной ценой: {price_to}")
+                    price_val = MAX_PRICE_VALUE
+                queryset = queryset.filter(price__lte=price_val)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Некорректное значение price_to: {price_to}, ошибка: {e}")
                 pass
 
         if category_slugs:
@@ -47,12 +62,19 @@ class ProductListView(ListView):
         if discount == '1':
             queryset = queryset.filter(discount__isnull=False)
 
-        # Фильтр по характеристикам
+        # Фильтр по характеристикам с валидацией spec_slug (защита от SQL-инъекции)
         spec_filters = {}
+        valid_spec_slugs = set(
+            SpecificationType.objects.values_list('slug', flat=True)
+        )
         for key, values in self.request.GET.lists():
             if key.startswith('spec_'):
-                spec_slug = key.replace('spec_', '')
-                spec_filters[spec_slug] = values
+                spec_slug = key.replace('spec_', '', 1)  # Удаляем только первый 'spec_'
+                # Валидация: slug должен существовать в БД и быть безопасным
+                if spec_slug in valid_spec_slugs and spec_slug.replace('-', '').replace('_', '').isalnum():
+                    spec_filters[spec_slug] = values
+                else:
+                    logger.warning(f"Попытка инъекции через spec_slug: {spec_slug}")
 
         if spec_filters:
             for spec_slug, values in spec_filters.items():
@@ -169,6 +191,10 @@ class ProductDetailView(DetailView):
 class ProductSearchView(ProductListView):
     template_name = 'index/search.html'
     htmx_partial_template = 'index/partials/search_content.html'
+
+    @method_decorator(ratelimit(key='ip', rate='10/m', block=True))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         # Начинаем с базового queryset (с select_related/prefetch_related)

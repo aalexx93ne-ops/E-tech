@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.validators import MinLengthValidator, MaxLengthValidator
+from appx.validators import product_image_validator, banner_image_validator
 
 
 class Category(models.Model):
@@ -51,7 +53,11 @@ class Tag(models.Model):
 
 
 class Banner(models.Model):
-    image = models.ImageField("Изображение", upload_to='banners/')
+    image = models.ImageField(
+        "Изображение",
+        upload_to='banners/',
+        validators=[banner_image_validator]
+    )
     alt_text = models.CharField("Описание", max_length=255)
     is_active = models.BooleanField("Активен", default=True)
 
@@ -95,7 +101,11 @@ class Product(models.Model):
     discount = models.ForeignKey(
         Discount, on_delete=models.SET_NULL, null=True, blank=True)
     main_image = models.ImageField(
-        "Главное изображение", upload_to='products/', blank=True, null=True)
+        "Главное изображение",
+        upload_to='products/',
+        blank=True,
+        null=True,
+    )
     created_at = models.DateTimeField("Добавлен", auto_now_add=True)
     updated_at = models.DateTimeField("Обновлен", auto_now=True)
 
@@ -134,7 +144,10 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(
-        "Доп. изображение", upload_to='products/gallery/')
+        "Доп. изображение",
+        upload_to='products/gallery/',
+        validators=[product_image_validator]
+    )
     alt_text = models.CharField(
         "Описание изображения", max_length=255, blank=True)
 
@@ -152,7 +165,14 @@ class Review(models.Model):
     name = models.CharField("Имя пользователя", max_length=100)
     rating = models.PositiveSmallIntegerField(
         "Оценка", choices=[(i, i) for i in range(1, 6)])
-    comment = models.TextField("Комментарий", blank=True)
+    comment = models.TextField(
+        "Комментарий",
+        blank=True,
+        validators=[
+            MinLengthValidator(10, message="Комментарий должен содержать не менее 10 символов"),
+            MaxLengthValidator(2000, message="Комментарий не должен превышать 2000 символов"),
+        ]
+    )
     created_at = models.DateTimeField("Дата", auto_now_add=True)
 
     class Meta:

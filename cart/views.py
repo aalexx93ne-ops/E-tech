@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
 from index.models import Product
 from .cart import Cart
 
@@ -24,6 +25,7 @@ def _htmx_cart_response(request, ctx):
 
 
 @require_POST
+@ratelimit(key='ip', rate='30/m', block=True)
 def cart_add(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
@@ -46,6 +48,7 @@ def cart_add(request, product_id):
 
 
 @require_POST
+@ratelimit(key='ip', rate='30/m', block=True)
 def cart_remove(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
@@ -58,6 +61,7 @@ def cart_remove(request, product_id):
 
 
 @require_POST
+@ratelimit(key='ip', rate='10/m', block=True)
 def cart_clear(request):
     cart = Cart(request)
     cart.clear()

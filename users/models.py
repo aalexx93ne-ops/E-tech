@@ -5,7 +5,11 @@ from django.db import models
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True, verbose_name='Phone')
-    avatar = models.ImageField(upload_to='users/avatars/', blank=True, verbose_name='Avatar')
+    avatar = models.ImageField(
+        upload_to='users/avatars/',
+        blank=True,
+        verbose_name='Avatar',
+    )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Birth Date')
     
     # Address fields

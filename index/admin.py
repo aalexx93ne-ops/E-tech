@@ -1,8 +1,15 @@
 from django.contrib import admin
+from django.db import models
+from django.forms import ImageField
 from .models import (
     Category, Brand, Discount, Product, ProductImage, Review, Stock,
-    SpecificationType, ProductSpecification,
+    SpecificationType, ProductSpecification, Banner,
 )
+from appx.validators import product_image_validator, banner_image_validator
+
+
+# Валидация изображений в админке через formfield_overrides
+# Используем функции-валидаторы вместо классов для совместимости с миграциями
 
 
 @admin.register(Category)
@@ -75,6 +82,28 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = ('product', 'alt_text')
     list_select_related = ('product',)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'image':
+            from django.forms import ImageField
+            field = super().formfield_for_dbfield(db_field, request, **kwargs)
+            field = ImageField(validators=product_image_validator)
+            return field
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ('alt_text', 'is_active')
+    list_filter = ('is_active',)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'image':
+            from django.forms import ImageField
+            field = super().formfield_for_dbfield(db_field, request, **kwargs)
+            field = ImageField(validators=banner_image_validator)
+            return field
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
 
 @admin.register(Review)

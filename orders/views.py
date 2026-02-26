@@ -97,6 +97,7 @@ from django.core.exceptions import ValidationError
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
+from django_ratelimit.decorators import ratelimit
 from .models import Order, Payment
 from .services import PaymentService
 
@@ -104,6 +105,7 @@ PAYMENT_SECRET = getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
 
 
 @login_required
+@ratelimit(key='user', rate='5/m', block=True)
 @require_POST
 def payment_create(request, order_id):
     order = Order.objects.filter(id=order_id, user=request.user).first()
@@ -126,6 +128,7 @@ def payment_create(request, order_id):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', block=True)
 @require_POST
 def payment_callback(request):
     try:
