@@ -56,11 +56,10 @@ secrets.json
 client_secret*.json
 *client_secret*.json
 
-# Dependencies
-requirements.txt
-requirements-dev.txt
-Pipfile
-Pipfile.lock
+# Dependencies (uncomment if using alternative package managers)
+# requirements-dev.txt
+# Pipfile
+# Pipfile.lock
 
 # Logs
 logs/
