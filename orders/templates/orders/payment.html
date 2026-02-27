@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оплата заказа #{{ order.id }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .payment-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        text-align: center;
+    }
+    .payment-container h1 {
+        margin-bottom: 20px;
+        color: #1d1d1f;
+    }
+    .payment-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #4caf9f;
+        margin: 20px 0;
+    }
+    .payment-crypto-info {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    .payment-crypto-info p {
+        margin: 10px 0;
+        color: #64748b;
+    }
+    .crypto-logos {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .crypto-logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    .payment-btn {
+        display: inline-block;
+        background-color: #4caf9f;
+        color: white;
+        padding: 15px 40px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: background-color 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    .payment-btn:hover {
+        background-color: #3d8b7d;
+    }
+    .payment-status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background: #fffbe6;
+        color: #6d4c00;
+    }
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4caf9f;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="payment-container">
+        <h1>Оплата заказа #{{ order.id }}</h1>
+        
+        <div class="payment-amount">
+            {{ order.get_total_cost }} ₽
+        </div>
+        
+        <div class="payment-crypto-info">
+            <h3>Оплата криптовалютой</h3>
+            <p>Вы будете перенаправлены на платёжный шлюз NowPayments</p>
+            <div class="crypto-logos">
+                <!-- Логотипы криптовалют -->
+                <div class="crypto-logo" style="background: #F7931A;" title="Bitcoin"></div>
+                <div class="crypto-logo" style="background: #627EEA;" title="Ethereum"></div>
+                <div class="crypto-logo" style="background: #26A17B;" title="USDT"></div>
+                <div class="crypto-logo" style="background: #111;" title="TRON"></div>
+                <div class="crypto-logo" style="background: #0052FF;" title="Litecoin"></div>
+                <div class="crypto-logo" style="background: #008DCD;" title="Dogecoin"></div>
+            </div>
+            <p style="font-size: 0.9rem; color: #94a3b8;">
+                NowPayments поддерживает 100+ криптовалют:<br>
+                BTC, ETH, USDT (TRC20/ERC20), TRX, LTC, DOGE и другие
+            </p>
+        </div>
+        
+        {% if redirect_url %}
+            <a href="{{ redirect_url }}" class="payment-btn">
+                Перейти к оплате
+            </a>
+        {% else %}
+            <form method="post" action="{% url 'orders:payment_create' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="payment-btn">
+                    Оплатить заказ
+                </button>
+            </form>
+        {% endif %}
+        
+        <div class="payment-status">
+            <div class="spinner"></div>
+            <p>Ожидание оплаты...</p>
+            <p style="font-size: 0.85rem; margin-top: 10px;">
+                После завершения оплаты вы будете возвращены на эту страницу
+            </p>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a href="{% url 'users:order_detail' order.id %}" style="color: #64748b; text-decoration: none;">
+                ← Вернуться к заказу
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Автоматическая проверка статуса платежа каждые 5 секунд
+    setInterval(function() {
+        fetch('{% url 'orders:payment_status' order.id %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.order_paid === true) {
+                    window.location.href = '{% url 'orders:order_success' order.id %}';
+                }
+            });
+    }, 5000);
+</script>
+{% endblock %}

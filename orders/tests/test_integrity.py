@@ -20,7 +20,7 @@ class PaymentTransactionAtomicityTest(TestCase):
         gateway = MockPaymentGateway()
         service = PaymentService(gateway=gateway)
         order = make_order_with_items()
-        payment = service.create_payment(order)
+        payment, _ = service.create_payment(order)
 
         from unittest.mock import patch
         # Имитируем сбой при сохранении Order после успешного payment.transition_to
@@ -80,13 +80,13 @@ class OrderLockingTest(TestCase):
         service = PaymentService(gateway=gateway)
         order = make_order_with_items()
 
-        p1 = service.create_payment(order)
+        p1, _ = service.create_payment(order)
         data = {'payment_id': p1.payment_id, 'status': 'failed'}
         sig = make_valid_signature(data, SECRET)
         service.handle_callback(data, sig, SECRET)
 
         # Теперь нет активного pending — можно создать новый
-        p2 = service.create_payment(order)
+        p2, _ = service.create_payment(order)
         self.assertNotEqual(p1.payment_id, p2.payment_id)
         self.assertEqual(p2.status, Payment.STATUS_PENDING)
 

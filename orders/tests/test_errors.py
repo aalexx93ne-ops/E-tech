@@ -45,7 +45,7 @@ class GatewayTimeoutTest(TestCase):
         except ConnectionError:
             pass
         gateway.timeout_on_create = False
-        payment = service.create_payment(order)
+        payment, _ = service.create_payment(order)
         self.assertEqual(payment.status, Payment.STATUS_PENDING)
 
 
@@ -56,7 +56,7 @@ class InsufficientFundsTest(TestCase):
         self.gateway = MockPaymentGateway()
         self.service = PaymentService(gateway=self.gateway)
         self.order = make_order_with_items()
-        self.payment = self.service.create_payment(self.order)
+        self.payment, _ = self.service.create_payment(self.order)
 
     def test_failed_callback_leaves_order_unchanged(self):
         data = {
@@ -90,7 +90,7 @@ class InsufficientFundsTest(TestCase):
         sig = make_valid_signature(data, SECRET)
         self.service.handle_callback(data, sig, SECRET)
 
-        new_payment = self.service.create_payment(self.order)
+        new_payment, _ = self.service.create_payment(self.order)
         self.assertNotEqual(new_payment.payment_id, self.payment.payment_id)
         self.assertEqual(new_payment.status, Payment.STATUS_PENDING)
 
@@ -102,7 +102,7 @@ class UserCancelTest(TestCase):
         self.gateway = MockPaymentGateway()
         self.service = PaymentService(gateway=self.gateway)
         self.order = make_order_with_items()
-        self.payment = self.service.create_payment(self.order)
+        self.payment, _ = self.service.create_payment(self.order)
 
     def test_cancelled_payment_status(self):
         data = {'payment_id': self.payment.payment_id, 'status': 'cancelled'}
@@ -122,9 +122,10 @@ class UserCancelTest(TestCase):
         self.assertFalse(self.order.paid)
 
     def test_can_create_new_payment_after_cancel(self):
+        """После отмены можно создать новый платёж."""
         data = {'payment_id': self.payment.payment_id, 'status': 'cancelled'}
         sig = make_valid_signature(data, SECRET)
         self.service.handle_callback(data, sig, SECRET)
 
-        new_payment = self.service.create_payment(self.order)
+        new_payment, _ = self.service.create_payment(self.order)
         self.assertEqual(new_payment.status, Payment.STATUS_PENDING)

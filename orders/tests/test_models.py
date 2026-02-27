@@ -141,7 +141,7 @@ class PaymentOrderStatusSyncTest(TestCase):
         from django.conf import settings
         secret = getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
         service = PaymentService(gateway=MockPaymentGateway())
-        payment = service.create_payment(self.order)
+        payment, _ = service.create_payment(self.order)
         data = {'payment_id': payment.payment_id, 'status': status}
         if error_message:
             data['error_message'] = error_message

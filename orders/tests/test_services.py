@@ -19,20 +19,20 @@ class PaymentServiceCreateTest(TestCase):
         self.order = make_order_with_items(price='7500.00', quantity=2)
 
     def test_creates_payment_with_unique_id(self):
-        payment = self.service.create_payment(self.order)
+        payment, redirect_url = self.service.create_payment(self.order)
         self.assertTrue(payment.payment_id.startswith('mock_'))
         self.assertNotEqual(payment.payment_id, '')
 
     def test_payment_amount_matches_order(self):
-        payment = self.service.create_payment(self.order)
+        payment, redirect_url = self.service.create_payment(self.order)
         self.assertEqual(payment.amount, self.order.get_total_cost())
 
     def test_payment_status_is_pending(self):
-        payment = self.service.create_payment(self.order)
+        payment, redirect_url = self.service.create_payment(self.order)
         self.assertEqual(payment.status, Payment.STATUS_PENDING)
 
     def test_payment_saved_to_db(self):
-        payment = self.service.create_payment(self.order)
+        payment, redirect_url = self.service.create_payment(self.order)
         self.assertTrue(Payment.objects.filter(pk=payment.pk).exists())
 
     def test_raises_for_paid_order(self):
@@ -54,7 +54,7 @@ class PaymentCallbackTest(TestCase):
         self.gateway = MockPaymentGateway()
         self.service = PaymentService(gateway=self.gateway)
         self.order = make_order_with_items()
-        self.payment = self.service.create_payment(self.order)
+        self.payment, _ = self.service.create_payment(self.order)
 
     def _callback(self, status, extra=None):
         data = {'payment_id': self.payment.payment_id, 'status': status}

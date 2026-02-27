@@ -5,7 +5,20 @@
 
 {% block content %}
 <div class="container">
-    <h1>Спасибо за заказ!</h1>
-    <p>Ваш заказ №{{ order.id }} успешно оформлен.</p>
+    <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.05); text-align:center;">
+        <h1 style="color:#1d1d1f;">Спасибо за заказ!</h1>
+        <p style="color:#64748b; font-size:1.1rem;">Ваш заказ №{{ order.id }} успешно оформлен.</p>
+        <p style="color:#64748b;">Сумма к оплате: <strong style="color:#4caf9f;">{{ order.get_total_cost }} ₽</strong></p>
+        {% if not order.paid %}
+        <form method="post" action="{% url 'orders:payment_create' order.id %}">
+            {% csrf_token %}
+            <button type="submit" class="button" style="margin-top:20px; padding:15px 40px; font-size:1.1rem;">
+                Перейти к оплате
+            </button>
+        </form>
+        {% else %}
+        <p style="color:#4caf9f; font-weight:600; margin-top:20px;">✓ Заказ оплачен</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

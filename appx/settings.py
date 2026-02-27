@@ -211,6 +211,21 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
 
+# Payment callback secret key
+PAYMENT_CALLBACK_SECRET = os.getenv('PAYMENT_CALLBACK_SECRET', 'dev-secret')
+
+# NowPayments API key
+NOWPAYMENTS_API_KEY = os.getenv('NOWPAYMENTS_API_KEY', None)
+# NowPayments IPN Secret (Dashboard → Payment Settings → IPN Secret Key)
+NOWPAYMENTS_IPN_SECRET = os.getenv('NOWPAYMENTS_IPN_SECRET', '')
+# Публичный URL сайта (нужен для формирования ipn_callback_url, success_url, cancel_url)
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
+# CryptoCloud settings (резервный платёжный шлюз)
+CRYPTOCLOUD_API_KEY = os.getenv('CRYPTOCLOUD_API_KEY', None)
+CRYPTOCLOUD_SECRET_KEY = os.getenv('CRYPTOCLOUD_SECRET_KEY', None)
+CRYPTOCLOUD_SHOP_ID = os.getenv('CRYPTOCLOUD_SHOP_ID', None)
+
 # Rate limiting settings
 RATELIMIT_VIEW = 'django_ratelimit.exceptions.ratelimited'
 RATELIMIT_USE_CACHE = 'default'
@@ -228,7 +243,7 @@ CONTENT_SECURITY_POLICY = {
         'object-src': ("'none'",),
         'media-src': ("'self'",),
         'base-uri': ("'self'",),
-        'form-action': ("'self'",),
+        'form-action': ("'self'", 'https://nowpayments.io'),
     }
 }
 

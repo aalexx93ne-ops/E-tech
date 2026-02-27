@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Переход к оплате...{% endblock %}
+{% block extra_head %}<meta http-equiv="refresh" content="0; url={{ redirect_url }}">{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.05); text-align:center;">
+        <h2 style="color:#1d1d1f;">Переход к оплате...</h2>
+        <p style="color:#64748b;">Вы будете перенаправлены на платёжную страницу NowPayments.</p>
+        <div style="border:3px solid #f3f3f3; border-top:3px solid #4caf9f; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
+        <p style="color:#64748b; font-size:0.9rem;">Если переход не произошёл автоматически — <a href="{{ redirect_url }}" style="color:#4caf9f;">нажмите здесь</a></p>
+    </div>
+</div>
+<style>
+@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+</style>
+{% endblock %}

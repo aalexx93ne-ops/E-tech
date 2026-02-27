@@ -1,11 +1,25 @@
-from django.shortcuts import render, redirect, get_object_or_404
+import json
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
-from django.contrib import messages
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_GET
+from django_ratelimit.decorators import ratelimit
+
 from cart.cart import Cart
-from .forms import OrderCreateForm
-from .models import Order, OrderItem
 from index.models import Stock
+from .forms import OrderCreateForm
+from .models import Order, OrderItem, Payment
+from .services import PaymentService
+
+PAYMENT_SECRET = getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
+NOWPAYMENTS_IPN_SECRET = getattr(settings, 'NOWPAYMENTS_IPN_SECRET', '')
 
 
 def order_create(request):
@@ -63,6 +77,8 @@ def order_create(request):
                     )
 
             cart.clear()
+            # Сохраняем order_id в сессию для анонимных пользователей
+            request.session[f'order_{order.id}_owner'] = True
             return redirect('orders:order_success', order_id=order.id)
     else:
         initial = {}
@@ -89,42 +105,70 @@ def order_success(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'orders/created.html', {'order': order})
 
-import json
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_GET
-from django_ratelimit.decorators import ratelimit
-from .models import Order, Payment
-from .services import PaymentService
 
-PAYMENT_SECRET = getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
+def _get_order_for_user(request, order_id):
+    """Вернуть заказ если он принадлежит текущему пользователю или сессии."""
+    if request.user.is_authenticated:
+        return Order.objects.filter(id=order_id, user=request.user).first()
+    # Для анонимов — проверяем сессию
+    if request.session.get(f'order_{order_id}_owner'):
+        return Order.objects.filter(id=order_id, user__isnull=True).first()
+    return None
 
 
-@login_required
-@ratelimit(key='user', rate='5/m', block=True)
+def payment_page(request, order_id):
+    """Страница оплаты заказа."""
+    order = _get_order_for_user(request, order_id)
+    if order is None:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden()
+    
+    # Проверяем, есть ли активный платёж
+    payment = order.payments.filter(status=Payment.STATUS_PENDING).first()
+    
+    # Получаем redirect_url из сессии (если был перенаправлен)
+    redirect_url = request.session.get(f'payment_redirect_{order_id}', '')
+    
+    return render(request, 'orders/payment.html', {
+        'order': order,
+        'payment': payment,
+        'redirect_url': redirect_url,
+    })
+
+
+@ratelimit(key='ip', rate='5/m', block=True)
 @require_POST
 def payment_create(request, order_id):
-    order = Order.objects.filter(id=order_id, user=request.user).first()
+    """Создание платежа, редирект на платёжный шлюз."""
+    order = _get_order_for_user(request, order_id)
     if order is None:
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden()
 
     service = PaymentService()
     try:
-        payment = service.create_payment(order)
+        payment, redirect_url = service.create_payment(order)
     except ValidationError as e:
         messages.error(request, e.message)
-        return JsonResponse({'error': e.message}, status=400)
+        # Для AJAX-запросов возвращаем JSON
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': e.message}, status=400)
+        return redirect('orders:order_success', order_id=order_id)
 
-    return JsonResponse({
-        'payment_id': payment.payment_id,
-        'status': payment.status,
-        'redirect_url': f'/orders/{order.id}/payment/status/',
-    })
+    if redirect_url:
+        request.session[f'payment_redirect_{order_id}'] = redirect_url
+        return redirect('orders:payment_redirect', order_id=order_id)
+
+    return redirect('orders:payment_page', order_id=order_id)
+
+
+@require_GET
+def payment_redirect(request, order_id):
+    """Промежуточная страница — делает meta-refresh редирект на внешний шлюз."""
+    redirect_url = request.session.get(f'payment_redirect_{order_id}', '')
+    if not redirect_url:
+        return redirect('orders:payment_page', order_id=order_id)
+    return render(request, 'orders/payment_redirect.html', {'redirect_url': redirect_url})
 
 
 @csrf_exempt
@@ -136,23 +180,31 @@ def payment_callback(request):
     except (ValueError, KeyError):
         return HttpResponseBadRequest('Invalid JSON')
 
-    signature = request.headers.get('X-Payment-Signature', '')
+    # NowPayments передаёт подпись в заголовке x-nowpayments-sig
+    signature = (
+        request.headers.get('x-nowpayments-sig')
+        or request.headers.get('X-Nowpayments-Sig')
+        or request.headers.get('X-Payment-Signature', '')
+    )
     service = PaymentService()
+    # Для NowPayments используем IPN Secret; для Mock/прочих — PAYMENT_SECRET
+    from .services import NowPaymentsGateway
+    secret = NOWPAYMENTS_IPN_SECRET if isinstance(service.gateway, NowPaymentsGateway) else PAYMENT_SECRET
     try:
-        service.handle_callback(data, signature, PAYMENT_SECRET)
+        service.handle_callback(data, signature, secret)
     except ValidationError as e:
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse({'ok': True})
 
 
-@login_required
 @require_GET
 def payment_status(request, order_id):
-    order = Order.objects.filter(id=order_id, user=request.user).prefetch_related('payments').first()
+    order = _get_order_for_user(request, order_id)
     if order is None:
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden()
+    order.payments.prefetch_related('payments')
 
     payment = order.payments.first()
     return JsonResponse({
