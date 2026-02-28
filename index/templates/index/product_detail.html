@@ -1,18 +1,20 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load index_tags %}
 
 {% block title %}{{ product.name }} | E-Tech{% endblock %}
 
 {% block content %}
-<nav class="breadcrumbs" aria-label="Навигация">
-  <a href="{% url 'index:index' %}">Каталог</a>
-  {% if product.category %}
-    <span class="breadcrumb-sep">›</span>
-    <a href="{% url 'index:index' %}?category={{ product.category.slug }}">{{ product.category.name }}</a>
-  {% endif %}
-  <span class="breadcrumb-sep">›</span>
-  <span class="breadcrumb-current">{{ product.name }}</span>
-</nav>
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Навигация">
+    <a href="{% url 'index:index' %}">Каталог</a>
+    {% if product.category %}
+      <span class="breadcrumb-sep">›</span>
+      <a href="{% url 'index:index' %}?category={{ product.category.slug }}">{{ product.category.name }}</a>
+    {% endif %}
+  </nav>
+</div>
+
 <div class="product-container">
   <div class="product-image">
     {% if product.main_image %}
@@ -69,6 +71,89 @@
       <span>✔ Гарантия качества</span>
       <span>✔ Быстрая доставка</span>
     </div>
+  </div>
+</div>
+
+<div class="product-reviews">
+  <h2>Отзывы пользователей</h2>
+  
+  <div class="rating-summary">
+    <div class="avg-rating-value">
+      {% if product.avg_rating %}
+        {{ product.avg_rating|stringformat:".1f" }}
+      {% else %}
+        0.0
+      {% endif %}
+    </div>
+    <div class="rating-stars">
+      {% if product.avg_rating %}
+        {% for i in "12345" %}
+          <span style="color: {% if i|add:0 <= product.avg_rating %}#f1c40f{% else %}#ddd{% endif %}; font-size: 24px;">★</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div class="reviews-count">({{ reviews.count }} отзывов)</div>
+  </div>
+
+  <div class="review-list">
+    {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-header">
+          <div class="reviewer-name">
+            {{ review.name }}
+            {% if review.is_verified_purchase %}
+              <span class="verified-badge">✔ Проверенная покупка</span>
+            {% endif %}
+          </div>
+          <div class="review-date">{{ review.created_at|date:"d.m.Y" }}</div>
+        </div>
+        
+        <div class="review-rating">
+          {% for i in "12345" %}
+            <span style="color: {% if i|add:0 <= review.rating %}#f1c40f{% else %}#ddd{% endif %};">★</span>
+          {% endfor %}
+        </div>
+
+        {% if review.tags %}
+          <div class="review-tags">
+            {% for tag in review.tags %}
+              <span class="tag-badge">{{ tag|replace:"_, " }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="review-comment">
+          {{ review.comment|linebreaks }}
+        </div>
+      </div>
+    {% empty %}
+      <p>Пока нет отзывов об этом товаре. Станьте первым!</p>
+    {% endfor %}
+  </div>
+
+  <div class="review-form-section">
+    {% if user.is_authenticated %}
+      <h3>Оставить отзыв</h3>
+      <form method="post" action="{% url 'index:product_detail' product.slug %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label>Ваша оценка</label>
+          <div class="rating-input">
+            {% for i in "54321" %}
+              <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+              <label for="star{{ i }}">★</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="{{ review_form.comment.id_for_label }}">Ваш комментарий</label>
+          {{ review_form.comment }}
+        </div>
+        <button type="submit" class="action-btn primary">Отправить отзыв</button>
+      </form>
+    {% else %}
+      <p>Чтобы оставить отзыв, пожалуйста, <a href="{% url 'account_login' %}?next={{ request.path }}">войдите в систему</a>.</p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

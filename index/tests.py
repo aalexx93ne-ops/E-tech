@@ -1,8 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 from decimal import Decimal
 
-from index.models import Product, Category, Brand
+from index.models import Product, Category, Brand, SpecificationType, ProductSpecification, Review
+
+User = get_user_model()
 
 
 def make_category(name='Тест', slug='test'):
@@ -95,6 +98,61 @@ class ProductDetailViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+
+class ReviewTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.category = make_category()
+        self.product = make_product('Телефон', 'phone', '20000.00', category=self.category)
+        
+        # Создаем характеристику для теста тегов
+        self.spec_type = SpecificationType.objects.create(name='Экран')
+        ProductSpecification.objects.create(product=self.product, spec_type=self.spec_type, value='OLED')
+
+    def test_review_creation_and_tags(self):
+        review = Review.objects.create(
+            product=self.product,
+            user=self.user,
+            name='Test User',
+            rating=5,
+            comment='Особенно радует экран, а вот батарея не держит.'
+        )
+        # Проверяем, что тег "радует_экран" выделился (несмотря на "особенно")
+        self.assertIn('радует_экран', review.tags)
+        
+    def test_negation_tags(self):
+        # Создаем характеристику Батарея для теста
+        spec_type_bat = SpecificationType.objects.create(name='Батарея')
+        ProductSpecification.objects.create(product=self.product, spec_type=spec_type_bat, value='5000mAh')
+        
+        review = Review.objects.create(
+            product=self.product,
+            user=self.user,
+            name='Test User',
+            rating=2,
+            comment='Не понравился экран, батарея слабая'
+        )
+        # Проверяем правильную обработку отрицания
+        self.assertIn('не_понравился_экран', review.tags)
+        self.assertIn('батарея_слабая', review.tags)
+
+    def test_anonymous_cannot_post_review(self):
+        response = self.client.post(
+            reverse('index:product_detail', kwargs={'slug': self.product.slug}),
+            {'rating': 5, 'comment': 'Anonymous review test'}
+        )
+        self.assertEqual(response.status_code, 302) # Redirect to login
+        self.assertEqual(Review.objects.count(), 0)
+
+    def test_authorized_can_post_review(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('index:product_detail', kwargs={'slug': self.product.slug}),
+            {'rating': 4, 'comment': 'Valid review for testing purposes'}
+        )
+        self.assertEqual(response.status_code, 302) # Success redirect
+        self.assertEqual(Review.objects.count(), 1)
+        self.assertEqual(Review.objects.first().user, self.user)
 
 class SearchViewTest(TestCase):
     def setUp(self):

@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from django.conf import settings
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from appx.validators import product_image_validator, banner_image_validator
+import re
 
 
 class Category(models.Model):
@@ -162,25 +164,116 @@ class ProductImage(models.Model):
 class Review(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Пользователь")
     name = models.CharField("Имя пользователя", max_length=100)
     rating = models.PositiveSmallIntegerField(
-        "Оценка", choices=[(i, i) for i in range(1, 6)])
+        "Оценка", choices=[(i, f"{i} {'★' * i}") for i in range(1, 6)])
     comment = models.TextField(
         "Комментарий",
-        blank=True,
         validators=[
             MinLengthValidator(10, message="Комментарий должен содержать не менее 10 символов"),
             MaxLengthValidator(2000, message="Комментарий не должен превышать 2000 символов"),
         ]
     )
+    tags = models.JSONField("Теги", default=list, blank=True)
+    is_verified_purchase = models.BooleanField("Проверенная покупка", default=False)
     created_at = models.DateTimeField("Дата", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлен", auto_now=True)
 
     class Meta:
         verbose_name = "Отзыв"
         verbose_name_plural = "Отзывы"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['product', '-created_at']),
+        ]
 
     def __str__(self):
         return f"Review for {self.product.name} by {self.name}"
+
+    def save(self, *args, **kwargs):
+        # Автоматическая проверка верифицированной покупки, если есть пользователь
+        if self.user and not self.is_verified_purchase:
+            from orders.models import OrderItem
+            self.is_verified_purchase = OrderItem.objects.filter(
+                order__user=self.user,
+                product=self.product,
+                order__paid=True
+            ).exists()
+        
+        # Генерация тегов перед сохранением
+        if self.comment:
+            self.tags = self.extract_tags()
+            
+        super().save(*args, **kwargs)
+
+    def extract_tags(self):
+        """
+        Улучшенный алгоритм выделения тегов согласно ТЗ:
+        - Учитывает частицу 'не' (не понравился экран)
+        - Частичное совпадение слов из характеристик (память -> оперативная память)
+        """
+        text = self.comment.lower()
+        # Список стоп-слов (базовый)
+        stop_words = {'и', 'а', 'но', 'же', 'бы', 'ли', 'в', 'на', 'с', 'к', 'по', 'о', 'об', 'из', 'за', 'под', 'над', 'через', 'для', 'от', 'до', 'у', 'при', 'очень', 'особенно'}
+        
+        # Получение ключевых слов из характеристик (слова длиннее 2 букв)
+        spec_types = list(self.product.specifications.values_list('spec_type__name', flat=True))
+        keywords = set()
+        for spec in spec_types:
+            words = re.findall(r'\w+', spec.lower())
+            keywords.update([w for w in words if len(w) > 2])
+
+        found_tags = []
+        # Разбиваем на фразы по знакам препинания
+        phrases = re.split(r'[,;:.!?\n]+', text)
+        
+        for phrase in phrases:
+            words = re.findall(r'\w+', phrase)
+            for i, word in enumerate(words):
+                # Если текущее слово - это ключевое слово (или часть характеристики)
+                if word in keywords:
+                    tag_parts = []
+                    
+                    # Проверяем 2 слова ДО ключевого во фразе
+                    look_back = 2
+                    start_idx = max(0, i - look_back)
+                    context_before = words[start_idx:i]
+                    
+                    # Ищем "не" в контексте
+                    has_negation = 'не' in context_before
+                    
+                    # Собираем части тега (игнорируя стоп-слова и ДРУГИЕ ключевые слова)
+                    for w in context_before:
+                        if w == 'не' or (w not in stop_words and w not in keywords):
+                            tag_parts.append(w)
+                    
+                    tag_parts.append(word)
+                    
+                    # Проверяем 1 слово ПОСЛЕ ключевого во фразе
+                    if i + 1 < len(words):
+                        next_word = words[i+1]
+                        # Не берем стоп-слова, частицу "не" или другие ключевые слова
+                        if next_word not in stop_words and next_word != 'не' and next_word not in keywords:
+                            tag_parts.append(next_word)
+                    
+                    # Если получилось больше одного слова (т.е. описание + характеристика)
+                    if len(tag_parts) > 1:
+                        # Если есть "не", оно должно быть в начале для ясности
+                        if has_negation and 'не' in tag_parts:
+                            tag_parts.remove('не')
+                            tag_parts.insert(0, 'не')
+                        
+                        found_tags.append("_".join(tag_parts))
+
+        # Убираем дубликаты и берем первые 5
+        unique_tags = []
+        for tag in found_tags:
+            if tag not in unique_tags:
+                unique_tags.append(tag)
+        
+        return unique_tags[:5]
 
 
 class Stock(models.Model):

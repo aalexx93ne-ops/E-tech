@@ -1,13 +1,17 @@
 # index/views.py
 from collections import defaultdict
-from django.views.generic import ListView, DetailView
-from django.db.models import Q
+from django.views.generic import ListView, DetailView, FormView
+from django.views.generic.detail import SingleObjectMixin
+from django.urls import reverse
+from django.shortcuts import redirect
+from django.db.models import Q, Avg
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 import logging
-from .models import Product, Category, Brand, Tag, Banner, ProductSpecification, SpecificationType
+from .models import Product, Category, Brand, Tag, Banner, ProductSpecification, SpecificationType, Review
 from cart.forms import CartAddProductForm
+from .forms import ReviewForm
 
 logger = logging.getLogger(__name__)
 SIDEBAR_CACHE_TTL = 60 * 15  # 15 минут
@@ -172,7 +176,7 @@ class ProductListView(ListView):
         return list(grouped.values())
 
 
-class ProductDetailView(DetailView):
+class ProductDisplay(DetailView):
     model = Product
     template_name = 'index/product_detail.html'
     context_object_name = 'product'
@@ -180,12 +184,54 @@ class ProductDetailView(DetailView):
     def get_queryset(self):
         return Product.objects.select_related(
             'category', 'brand', 'discount', 'stock'
-        ).prefetch_related('images', 'specifications__spec_type')
+        ).prefetch_related(
+            'images', 
+            'specifications__spec_type',
+            'reviews__user'
+        ).annotate(
+            avg_rating=Avg('reviews__rating')
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['cart_product_form'] = CartAddProductForm()
+        context['review_form'] = ReviewForm()
+        context['reviews'] = self.object.reviews.all()
         return context
+
+
+class ReviewFormView(SingleObjectMixin, FormView):
+    template_name = 'index/product_detail.html'
+    form_class = ReviewForm
+    model = Product
+
+    @method_decorator(ratelimit(key='user_or_ip', rate='5/m', block=True))
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('account_login')
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        review = form.save(commit=False)
+        review.product = self.object
+        review.user = self.request.user
+        review.name = self.request.user.get_full_name() or self.request.user.username
+        review.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('index:product_detail', kwargs={'slug': self.object.slug})
+
+
+class ProductDetailView(DetailView):
+    def get(self, request, *args, **kwargs):
+        view = ProductDisplay.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        view = ReviewFormView.as_view()
+        return view(request, *args, **kwargs)
 
 
 class ProductSearchView(ProductListView):
