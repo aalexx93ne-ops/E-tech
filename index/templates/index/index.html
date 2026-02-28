@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}E-Tech - Главная{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'index/css/hero-section.css' %}" />
+{% endblock %}
 
 {% block content %}
 <div class="catalog-layout">
