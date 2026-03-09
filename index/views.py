@@ -101,12 +101,18 @@ class ProductListView(ListView):
         return queryset
 
     def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
+        # Сначала получаем контекст
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+        
+        # Проверяем HTMX-запрос
         if request.headers.get('HX-Request'):
             from django.template.response import TemplateResponse
             partial = getattr(self, 'htmx_partial_template', 'index/partials/product_list.html')
-            return TemplateResponse(request, partial, response.context_data)
-        return response
+            return TemplateResponse(request, partial, context)
+        
+        # Обычный запрос
+        return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -234,13 +240,25 @@ class ProductDetailView(DetailView):
         return view(request, *args, **kwargs)
 
 
-class ProductSearchView(ProductListView):
+class ProductSearchView(ListView):
+    model = Product
     template_name = 'index/search.html'
-    htmx_partial_template = 'index/partials/search_content.html'
+    htmx_partial_template = 'index/partials/search_results_only.html'
+    context_object_name = 'products'
+    paginate_by = 12
 
-    @method_decorator(ratelimit(key='ip', rate='10/m', block=True))
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        # Сначала получаем контекст
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+
+        # Проверяем HTMX-запрос
+        if request.headers.get('HX-Request'):
+            from django.template.response import TemplateResponse
+            return TemplateResponse(request, self.htmx_partial_template, context)
+
+        # Обычный запрос
+        return self.render_to_response(context)
 
     def get_queryset(self):
         # Начинаем с базового queryset (с select_related/prefetch_related)
@@ -254,15 +272,190 @@ class ProductSearchView(ProductListView):
             queryset = queryset.filter(
                 Q(name__icontains=query) |
                 Q(description__icontains=query)
-            )
+            ).distinct()
         else:
             # Если запрос пустой — возвращаем пустой queryset
             queryset = Product.objects.none()
+
+        # Применяем фильтры из сайдбара (если есть)
+        category_slugs = self.request.GET.getlist('category')
+        brand_slugs = self.request.GET.getlist('brand')
+        tag_slugs = self.request.GET.getlist('tag')
+        discount = self.request.GET.get('discount')
+        price_from = self.request.GET.get('price_from')
+        price_to = self.request.GET.get('price_to')
+
+        # Фильтр по цене
+        if price_from:
+            try:
+                price_val = float(self._clean_price(price_from))
+                queryset = queryset.filter(price__gte=price_val)
+            except (ValueError, TypeError):
+                pass
+        if price_to:
+            try:
+                price_val = float(self._clean_price(price_to))
+                queryset = queryset.filter(price__lte=price_val)
+            except (ValueError, TypeError):
+                pass
+
+        if category_slugs:
+            queryset = queryset.filter(category__slug__in=category_slugs)
+        if brand_slugs:
+            queryset = queryset.filter(brand__slug__in=brand_slugs)
+        if tag_slugs:
+            queryset = queryset.filter(tags__slug__in=tag_slugs)
+        if discount == '1':
+            queryset = queryset.filter(discount__isnull=False)
+
+        # Фильтр по характеристикам
+        from collections import defaultdict
+        spec_filters = {}
+        valid_spec_slugs = set(
+            SpecificationType.objects.values_list('slug', flat=True)
+        )
+        for key, values in self.request.GET.lists():
+            if key.startswith('spec_'):
+                spec_slug = key.replace('spec_', '', 1)
+                if spec_slug in valid_spec_slugs and spec_slug.replace('-', '').replace('_', '').isalnum():
+                    spec_filters[spec_slug] = values
+
+        if spec_filters:
+            for spec_slug, values in spec_filters.items():
+                queryset = queryset.filter(
+                    specifications__spec_type__slug=spec_slug,
+                    specifications__value__in=values
+                )
+
+        queryset = queryset.distinct()
+
+        # Сортировка
+        sort = self.request.GET.get('sort', '')
+        sort_map = {
+            'price_asc':  'price',
+            'price_desc': '-price',
+            'new':        '-id',
+        }
+        if sort in sort_map:
+            queryset = queryset.order_by(sort_map[sort])
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем поисковый запрос в контекст, чтобы отобразить его в шаблоне
-        context['query'] = self.request.GET.get('q')
+        # Добавляем поисковый запрос в контекст
+        context['query'] = self.request.GET.get('q', '')
+
+        # Для пагинации сохраняем query в контекст
+        params = self.request.GET.copy()
+        params.pop('page', None)
+        context['query_string'] = params.urlencode()
+
+        # Добавляем данные для фильтров (как в ProductListView)
+        context['categories'] = Category.objects.all()
+        context['brands'] = Brand.objects.all()
+        context['tags'] = Tag.objects.all()
+        context['spec_filters'] = [
+            {**sf, 'selected_values': self.request.GET.getlist(f'spec_{sf["slug"]}')}
+            for sf in self.get_spec_filters()
+        ]
+        context['selected_categories'] = self.request.GET.getlist('category')
+        context['selected_brands'] = self.request.GET.getlist('brand')
+        context['selected_tags'] = self.request.GET.getlist('tag')
+        context['discount_only'] = self.request.GET.get('discount') == '1'
+        context['price_from'] = self.request.GET.get('price_from')
+        context['price_to'] = self.request.GET.get('price_to')
+        context['current_sort'] = self.request.GET.get('sort', '')
+
         return context
+
+    @staticmethod
+    def _clean_price(value):
+        """Очищает ввод цены: '35 000,50' → '35000.50', '40.000' → '40000'."""
+        import re
+        value = value.replace(' ', '')
+        value = re.sub(r'[.,](\d{3})(?!\d)', r'\1', value)
+        return value.replace(',', '.')
+
+    def get_spec_filters(self):
+        """Получает уникальные значения для каждого типа характеристик."""
+        from collections import defaultdict
+        rows = (
+            ProductSpecification.objects
+            .select_related('spec_type')
+            .values_list('spec_type__slug', 'spec_type__name', 'value')
+            .distinct()
+            .order_by('spec_type__name', 'value')
+        )
+
+        grouped = defaultdict(lambda: {'values': []})
+        for slug, name, value in rows:
+            grouped[slug]['name'] = name
+            grouped[slug]['slug'] = slug
+            grouped[slug]['values'].append(value)
+
+        return list(grouped.values())
+
+    @method_decorator(ratelimit(key='ip', rate='10/m', block=True))
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+
+# === Views для сравнения товаров ===
+from django.http import JsonResponse
+from django.views import View
+from .services import ComparisonService
+
+
+class ComparisonView(View):
+    """
+    Страница сравнения товаров.
+    URL: /comparison/
+    """
+    template_name = 'index/comparison.html'
+
+    def get(self, request):
+        from django.shortcuts import render
+        product_ids = request.GET.get('product_ids', '')
+        
+        if not product_ids:
+            return render(request, self.template_name, {'error': 'Выберите товары для сравнения'})
+        
+        try:
+            product_ids = [int(x) for x in product_ids.split(',')]
+        except ValueError:
+            return render(request, self.template_name, {'error': 'Некорректный формат ID товаров'})
+        
+        if len(product_ids) != 2:
+            return render(request, self.template_name, {'error': 'Для сравнения нужно выбрать ровно 2 товара'})
+        
+        comparison_data = ComparisonService.get_comparison_data(product_ids)
+        
+        if 'error' in comparison_data:
+            return render(request, self.template_name, {'error': comparison_data['error']})
+        
+        return render(request, self.template_name, {'comparison_data': comparison_data})
+
+
+class ComparisonAPIView(View):
+    """
+    API для получения данных сравнения.
+    URL: /api/comparison/
+    """
+    def get(self, request):
+        product_ids_param = request.GET.get('product_ids', '')
+        
+        if not product_ids_param:
+            return JsonResponse({'error': 'Не указаны ID товаров'}, status=400)
+        
+        try:
+            product_ids = [int(x) for x in product_ids_param.split(',')]
+        except ValueError:
+            return JsonResponse({'error': 'Некорректный формат ID товаров'}, status=400)
+        
+        comparison_data = ComparisonService.get_comparison_data(product_ids)
+        
+        if 'error' in comparison_data:
+            return JsonResponse({'error': comparison_data['error']}, status=400)
+        
+        return JsonResponse(comparison_data)

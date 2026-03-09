@@ -104,7 +104,7 @@ class ReviewTest(TestCase):
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.category = make_category()
         self.product = make_product('Телефон', 'phone', '20000.00', category=self.category)
-        
+
         # Создаем характеристику для теста тегов
         self.spec_type = SpecificationType.objects.create(name='Экран')
         ProductSpecification.objects.create(product=self.product, spec_type=self.spec_type, value='OLED')
@@ -119,12 +119,12 @@ class ReviewTest(TestCase):
         )
         # Проверяем, что тег "радует_экран" выделился (несмотря на "особенно")
         self.assertIn('радует_экран', review.tags)
-        
+
     def test_negation_tags(self):
         # Создаем характеристику Батарея для теста
         spec_type_bat = SpecificationType.objects.create(name='Батарея')
         ProductSpecification.objects.create(product=self.product, spec_type=spec_type_bat, value='5000mAh')
-        
+
         review = Review.objects.create(
             product=self.product,
             user=self.user,
@@ -166,3 +166,265 @@ class SearchViewTest(TestCase):
         response = self.client.get(reverse('index:search') + '?q=')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['products']), 0)
+
+
+# === Тесты для системы сравнения товаров ===
+
+class ComparisonServiceTest(TestCase):
+    """Тесты для сервиса сравнения товаров."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.category = make_category('Смартфоны', 'smartfony')
+        self.brand = make_brand('BrandX', 'brandx')
+        
+        # Создаём 2 товара
+        self.product1 = make_product(
+            name='iPhone 15',
+            slug='iphone-15',
+            price='80000.00',
+            category=self.category,
+            brand=self.brand
+        )
+        self.product2 = make_product(
+            name='Samsung S24',
+            slug='samsung-s24',
+            price='90000.00',
+            category=self.category,
+            brand=self.brand
+        )
+        
+        # Создаём типы характеристик с настройками сравнения
+        self.ram_spec_type = SpecificationType.objects.create(
+            name='Оперативная память',
+            comparison_type='higher_better',
+            unit='ГБ',
+            priority=10,
+            is_comparable=True
+        )
+        
+        self.storage_spec_type = SpecificationType.objects.create(
+            name='Накопитель',
+            comparison_type='higher_better',
+            unit='ГБ',
+            priority=9,
+            is_comparable=True
+        )
+        
+        self.panel_spec_type = SpecificationType.objects.create(
+            name='Тип экрана',
+            comparison_type='categorical',
+            unit='',
+            priority=15,
+            is_comparable=True,
+            category_map={'AMOLED': 100, 'OLED': 95, 'IPS': 70, 'TN': 40}
+        )
+        
+        # Создаём характеристики для товаров
+        ProductSpecification.objects.create(
+            product=self.product1,
+            spec_type=self.ram_spec_type,
+            value='8 ГБ'
+        )
+        ProductSpecification.objects.create(
+            product=self.product2,
+            spec_type=self.ram_spec_type,
+            value='12 ГБ'
+        )
+        
+        ProductSpecification.objects.create(
+            product=self.product1,
+            spec_type=self.storage_spec_type,
+            value='256 ГБ'
+        )
+        ProductSpecification.objects.create(
+            product=self.product2,
+            spec_type=self.storage_spec_type,
+            value='128 ГБ'
+        )
+        
+        ProductSpecification.objects.create(
+            product=self.product1,
+            spec_type=self.panel_spec_type,
+            value='OLED'
+        )
+        ProductSpecification.objects.create(
+            product=self.product2,
+            spec_type=self.panel_spec_type,
+            value='IPS'
+        )
+
+    def test_validate_products_correct_count(self):
+        """Проверка валидации: ровно 2 товара."""
+        from index.services import ComparisonService
+        
+        # Слишком мало товаров
+        success, error, products = ComparisonService.validate_products([self.product1.id])
+        self.assertFalse(success)
+        self.assertIn('ровно 2', error)
+        
+        # Слишком много товаров
+        product3 = make_product('Third', 'third')
+        success, error, products = ComparisonService.validate_products([
+            self.product1.id, self.product2.id, product3.id
+        ])
+        self.assertFalse(success)
+
+    def test_validate_products_same_category(self):
+        """Проверка валидации: одна категория."""
+        from index.services import ComparisonService
+        
+        other_category = make_category('Другая', 'other')
+        other_product = make_product('Other', 'other', category=other_category)
+        
+        success, error, products = ComparisonService.validate_products([
+            self.product1.id, other_product.id
+        ])
+        self.assertFalse(success)
+        self.assertIn('одной категории', error)
+
+    def test_get_comparison_data(self):
+        """Проверка получения данных сравнения."""
+        from index.services import ComparisonService
+        
+        data = ComparisonService.get_comparison_data([self.product1.id, self.product2.id])
+        
+        self.assertNotIn('error', data)
+        self.assertEqual(data['category']['slug'], 'smartfony')
+        self.assertEqual(len(data['products']), 2)
+        self.assertGreater(len(data['metrics']), 0)
+        
+        # Проверка метрики RAM (higher_better) - ищем по названию типа характеристики
+        ram_metric = None
+        storage_metric = None
+        
+        for m in data['metrics']:
+            if 'оперативная' in m['name'].lower() or 'озу' in m['name'].lower():
+                ram_metric = m
+            elif 'накопитель' in m['name'].lower() or 'встроенная' in m['name'].lower():
+                storage_metric = m
+        
+        # Проверяем RAM
+        if ram_metric:
+            product1_data = next(p for p in ram_metric['products'] if p['product_id'] == self.product1.id)
+            product2_data = next(p for p in ram_metric['products'] if p['product_id'] == self.product2.id)
+            
+            self.assertFalse(product1_data['is_best'])
+            self.assertTrue(product1_data['is_worst'])
+            self.assertTrue(product2_data['is_best'])
+            self.assertFalse(product2_data['is_worst'])
+        
+        # Проверяем накопитель
+        if storage_metric:
+            product1_storage = next(p for p in storage_metric['products'] if p['product_id'] == self.product1.id)
+            product2_storage = next(p for p in storage_metric['products'] if p['product_id'] == self.product2.id)
+            
+            self.assertTrue(product1_storage['is_best'])  # 256 ГБ > 128 ГБ
+            self.assertFalse(product2_storage['is_best'])
+
+    def test_parse_value_numeric(self):
+        """Проверка парсинга числовых значений."""
+        from index.services import ComparisonService
+        
+        # Целое число
+        result = ComparisonService.parse_value('8 ГБ', 'higher_better')
+        self.assertEqual(result, Decimal('8'))
+        
+        # Дробное число
+        result = ComparisonService.parse_value('6.7 дюймов', 'higher_better')
+        self.assertEqual(result, Decimal('6.7'))
+        
+        # С запятой
+        result = ComparisonService.parse_value('150,5 г', 'lower_better')
+        self.assertEqual(result, Decimal('150.5'))
+
+    def test_parse_value_categorical(self):
+        """Проверка парсинга категориальных значений."""
+        from index.services import ComparisonService
+        
+        result = ComparisonService.parse_value('AMOLED', 'categorical')
+        self.assertEqual(result, 'AMOLED')
+        
+        result = ComparisonService.parse_value('IPS', 'categorical')
+        self.assertEqual(result, 'IPS')
+
+    def test_parse_value_boolean(self):
+        """Проверка парсинга булевых значений."""
+        from index.services import ComparisonService
+        
+        self.assertTrue(ComparisonService.parse_value('Да', 'boolean'))
+        self.assertTrue(ComparisonService.parse_value('yes', 'boolean'))
+        self.assertTrue(ComparisonService.parse_value('Есть', 'boolean'))
+        self.assertFalse(ComparisonService.parse_value('Нет', 'boolean'))
+
+
+class ComparisonViewTest(TestCase):
+    """Тесты для view сравнения товаров."""
+    
+    def setUp(self):
+        self.category = make_category('Смартфоны', 'smartfony')
+        self.product1 = make_product('iPhone', 'iphone', category=self.category)
+        self.product2 = make_product('Samsung', 'samsung', category=self.category)
+        
+        self.spec_type = SpecificationType.objects.create(
+            name='ОЗУ',
+            comparison_type='higher_better',
+            unit='ГБ',
+            is_comparable=True
+        )
+
+    def test_comparison_view_no_products(self):
+        """Тест: нет товаров."""
+        response = self.client.get(reverse('index:comparison'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Выберите товары')
+
+    def test_comparison_view_invalid_ids(self):
+        """Тест: некорректные ID."""
+        response = self.client.get(reverse('index:comparison') + '?product_ids=abc')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Некорректный формат')
+
+    def test_comparison_view_wrong_count(self):
+        """Тест: не 2 товара."""
+        response = self.client.get(reverse('index:comparison') + '?product_ids=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'ровно 2')
+
+    def test_comparison_view_success(self):
+        """Тест: успешное сравнение."""
+        slug = reverse('index:comparison') + f'?product_ids={self.product1.id},{self.product2.id}'
+        response = self.client.get(slug)
+        self.assertEqual(response.status_code, 200)
+
+
+class ComparisonAPITest(TestCase):
+    """Тесты для API сравнения."""
+    
+    def setUp(self):
+        self.category = make_category('Смартфоны', 'smartfony')
+        self.product1 = make_product('iPhone', 'iphone', category=self.category)
+        self.product2 = make_product('Samsung', 'samsung', category=self.category)
+
+    def test_api_no_product_ids(self):
+        """Тест: нет ID товаров."""
+        response = self.client.get(reverse('index:api_comparison'))
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, {'error': 'Не указаны ID товаров'})
+
+    def test_api_invalid_format(self):
+        """Тест: некорректный формат ID."""
+        response = self.client.get(reverse('index:api_comparison') + '?product_ids=abc')
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(response.content, {'error': 'Некорректный формат ID товаров'})
+
+    def test_api_success(self):
+        """Тест: успешный запрос."""
+        url = reverse('index:api_comparison') + f'?product_ids={self.product1.id},{self.product2.id}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('category', data)
+        self.assertIn('products', data)
+        self.assertIn('metrics', data)

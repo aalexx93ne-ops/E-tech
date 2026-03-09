@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Сравнение товаров{% endblock %}
+
+{% block content %}
+<div class="comparison-page">
+  <div class="comparison-page__header">
+    <a href="{% url 'index:index' %}" class="comparison-page__back">
+      ← Назад к каталогу
+    </a>
+    <h1 class="comparison-page__title">Сравнение товаров</h1>
+  </div>
+
+  {% if error %}
+    <div class="comparison-page__error">
+      {{ error }}
+    </div>
+  {% elif comparison_data %}
+    <div class="comparison-table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th class="metric-name">Характеристика</th>
+            {% for product in comparison_data.products %}
+              <th class="product-column">
+                <div class="product-thumb">
+                  {% if product.image %}
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                  {% else %}
+                    <img src="{% static 'img/placeholder.png' %}" alt="{{ product.name }}">
+                  {% endif %}
+                  <span class="product-name">{{ product.name }}</span>
+                  <div class="product-price">{{ product.final_price }} ₽</div>
+                </div>
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for metric in comparison_data.metrics %}
+            <tr class="metric-row">
+              <td class="metric-name">
+                <strong>{{ metric.name }}</strong>
+                {% if metric.unit %}
+                  <small class="text-muted">({{ metric.unit }})</small>
+                {% endif %}
+              </td>
+              {% for product_data in metric.products %}
+                <td class="product-value 
+                  {% if product_data.is_best %}is-best{% endif %}
+                  {% if product_data.is_worst %}is-worst{% endif %}
+                  {% if product_data.is_tie %}is-tie{% endif %}
+                ">
+                  {{ product_data.raw_value }}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-actions">
+      <a href="{% url 'index:index' %}" class="button--outline">Вернуться к покупкам</a>
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <p>Выберите товары для сравнения в каталоге</p>
+      <a href="{% url 'index:index' %}" class="button">Перейти в каталог</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

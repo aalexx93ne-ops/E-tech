@@ -12,7 +12,8 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'first_name', 'last_name', 'email',
                     'city', 'status', 'paid', 'created']
     list_filter = ['status', 'paid', 'created']
-    list_editable = ['status', 'paid']
+    list_editable = ['status']
+    readonly_fields = ['paid']
     search_fields = ['first_name', 'last_name', 'email']
     inlines = [OrderItemInline]
 

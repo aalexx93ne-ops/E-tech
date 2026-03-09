@@ -33,6 +33,7 @@ def cart_add(request, product_id):
         quantity = int(request.POST.get('quantity', 1))
     except (ValueError, TypeError):
         quantity = 1
+    quantity = max(1, min(quantity, 100))
     update = request.POST.get('update') in ('true', 'True', '1')
     cart.add(product=product, quantity=quantity, update_quantity=update)
 

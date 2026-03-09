@@ -50,6 +50,10 @@
   display: none;
 }
 
+.show-all .hidden-item {
+  display: list-item;
+}
+
 .show-more-btn {
   background: none;
   border: none;

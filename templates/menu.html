@@ -115,11 +115,18 @@
   <div class="search-bar">
     <form action="{% url 'index:search' %}" method="get" class="search-container"
           hx-get="{% url 'index:search' %}"
-          hx-target="#main-content"
+          hx-target="#search-results"
           hx-swap="innerHTML"
           hx-push-url="true"
-          hx-trigger="submit, keyup changed delay:400ms from:find input[name=q]">
-      <input type="text" name="q" class="search-input" placeholder="Поиск..." value="{{ query }}" />
+          hx-trigger="submit"
+          hx-include="this">
+      <input type="text" name="q" class="search-input" placeholder="Поиск..." value="{{ query }}" aria-label="Поиск товаров"
+             hx-trigger="keyup changed delay:300ms"
+             hx-get="{% url 'index:search' %}"
+             hx-target="#search-results"
+             hx-swap="innerHTML"
+             hx-push-url="true"
+             hx-include="closest form" />
     </form>
   </div>
 </header>

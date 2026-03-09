@@ -41,6 +41,7 @@
   display: flex;
   align-items: center;
   padding: 10px 0;
+  grid-column: 1 / -1;
 }
 
 /* Список товаров */
@@ -50,6 +51,13 @@
   grid-template-columns: repeat(auto-fill, 220px);
   gap: 16px;
   justify-content: space-between;
+}
+
+/* Элементы внутри grid, которые должны занимать всю ширину */
+.catalog-products .pagination,
+.catalog-products .search-empty-full,
+.catalog-products .empty-message {
+  grid-column: 1 / -1;
 }
 
 /* Адаптивность для мобильных устройств */

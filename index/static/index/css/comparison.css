@@ -1,0 +1,361 @@
+/* ========================================
+   Стили для системы сравнения товаров
+   ======================================== */
+
+/* --- Кнопка сравнения в карточке товара --- */
+.compare-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    color: #666;
+    font-size: 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.compare-btn:hover {
+    background-color: #f5f5f5;
+    color: #4caf9f;
+    border-color: #4caf9f;
+}
+
+/* Активное состояние — выделено цветом */
+.compare-btn.is-active {
+    background-color: #4caf9f;
+    color: #fff;
+    border-color: #4caf9f;
+}
+
+.compare-btn.is-active:hover {
+    background-color: #3d8b7d;
+    border-color: #3d8b7d;
+}
+
+/* Иконка внутри кнопки */
+.compare-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* Скрываем текст кнопки на мобильных */
+@media (max-width: 550px) {
+    .compare-btn__text {
+        display: none;
+    }
+
+    .compare-btn {
+        width: 36px;
+        padding: 0;
+    }
+}
+
+/* --- Модальное окно сравнения --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Модальное окно */
+.modal-window {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.is-visible .modal-window {
+    transform: translateY(0);
+}
+
+/* Кнопка закрытия */
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #86868b;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: #1d1d1f;
+}
+
+/* Заголовок */
+.modal-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0 0 24px 0;
+    text-align: center;
+}
+
+/* --- Таблица сравнения --- */
+.comparison-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 24px;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.comparison-table th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.comparison-table .metric-name {
+    font-weight: 500;
+    color: #1d1d1f;
+    width: 30%;
+}
+
+.comparison-table .product-column {
+    text-align: center;
+    width: 35%;
+}
+
+.comparison-table .product-thumb {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.comparison-table .product-thumb img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.comparison-table .product-thumb .product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+    text-align: center;
+}
+
+.comparison-table .product-value {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Подсветка лучших/худших значений */
+.comparison-table .is-best {
+    background-color: #d4edda;
+    font-weight: bold;
+    color: #155724;
+    position: relative;
+}
+
+.comparison-table .is-best::after {
+    content: "✓";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #28a745;
+}
+
+.comparison-table .is-worst {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.comparison-table .is-tie {
+    background-color: #e2e3e5;
+}
+
+.comparison-table .metric-row:hover {
+    background-color: #f5f5f5;
+}
+
+/* --- Кнопки в модальном окне --- */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.modal-actions .button--outline {
+    background-color: transparent;
+    border: 1px solid #4caf9f;
+    color: #4caf9f;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.modal-actions .button--outline:hover {
+    background-color: #4caf9f;
+    color: #fff;
+}
+
+.modal-actions .button {
+    background-color: #4caf9f;
+    border: 1px solid #4caf9f;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.modal-actions .button:hover {
+    background-color: #3d8b7d;
+    border-color: #3d8b7d;
+}
+
+/* --- Страница сравнения --- */
+.comparison-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.comparison-page__header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.comparison-page__title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin-bottom: 16px;
+}
+
+.comparison-page__error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 16px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    border: 1px solid #f5c6cb;
+}
+
+.comparison-page__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #4caf9f;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 24px;
+    transition: color 0.2s ease;
+}
+
+.comparison-page__back:hover {
+    color: #3d8b7d;
+    text-decoration: underline;
+}
+
+/* --- Адаптив для мобильных --- */
+@media (max-width: 768px) {
+    .modal-window {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+
+    .comparison-table .product-thumb img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .comparison-table .product-column {
+        width: 35%;
+    }
+
+    .comparison-page {
+        padding: 20px 12px;
+    }
+
+    .comparison-page__title {
+        font-size: 24px;
+    }
+}
+
+/* --- Disabled состояние кнопки --- */
+.compare-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Подсказка о выборе товара --- */
+.comparison-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1d1d1f;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    font-size: 14px;
+    display: none;
+}
+
+.comparison-hint.is-visible {
+    display: block;
+}

@@ -1,6 +1,6 @@
 import json
 import hashlib, hmac
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
@@ -23,10 +23,9 @@ class PaymentCreateViewTest(TestCase):
     def _url(self):
         return reverse('orders:payment_create', kwargs={'order_id': self.order.id})
 
-    def test_anonymous_redirects_to_login(self):
+    def test_anonymous_forbidden(self):
         response = self.client.post(self._url())
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/accounts/login/', response['Location'])
+        self.assertEqual(response.status_code, 403)
 
     def test_owner_creates_payment(self):
         self.client.force_login(self.user)
@@ -59,6 +58,11 @@ class PaymentCreateViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@override_settings(
+    NOWPAYMENTS_API_KEY=None,
+    CRYPTOCLOUD_API_KEY=None,
+    PAYMENT_CALLBACK_SECRET='dev-secret',
+)
 class PaymentCallbackViewTest(TestCase):
     """4.3.3 Callback от платёжной системы."""
 
@@ -132,9 +136,9 @@ class PaymentStatusViewTest(TestCase):
         response = self.client.get(self._url())
         self.assertEqual(response.status_code, 403)
 
-    def test_anonymous_redirects(self):
+    def test_anonymous_forbidden(self):
         response = self.client.get(self._url())
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_no_payment_returns_null(self):
         order2 = make_order_with_items(user=self.user)

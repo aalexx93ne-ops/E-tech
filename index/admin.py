@@ -1,9 +1,7 @@
 from django.contrib import admin
-from django.db import models
-from django.forms import ImageField
 from .models import (
     Category, Brand, Discount, Product, ProductImage, Review, Stock,
-    SpecificationType, ProductSpecification, Banner,
+    SpecificationType, ProductSpecification, Banner, Tag,
 )
 from appx.validators import product_image_validator, banner_image_validator
 
@@ -21,6 +19,12 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ('name',)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Discount)
@@ -62,13 +66,6 @@ class ProductAdmin(admin.ModelAdmin):
     stock_quantity.short_description = 'Количество на складе'
 
 
-@admin.register(SpecificationType)
-class SpecificationTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
-
-
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
     list_display = ('product', 'spec_type', 'value')
@@ -85,9 +82,8 @@ class ProductImageAdmin(admin.ModelAdmin):
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'image':
-            from django.forms import ImageField
             field = super().formfield_for_dbfield(db_field, request, **kwargs)
-            field = ImageField(validators=product_image_validator)
+            field.validators.append(product_image_validator)
             return field
         return super().formfield_for_dbfield(db_field, request, **kwargs)
 
@@ -99,9 +95,8 @@ class BannerAdmin(admin.ModelAdmin):
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'image':
-            from django.forms import ImageField
             field = super().formfield_for_dbfield(db_field, request, **kwargs)
-            field = ImageField(validators=banner_image_validator)
+            field.validators.append(banner_image_validator)
             return field
         return super().formfield_for_dbfield(db_field, request, **kwargs)
 
@@ -119,3 +114,28 @@ class StockAdmin(admin.ModelAdmin):
     list_select_related = ('product',)
     list_editable = ('quantity', 'is_available')
     list_display_links = ('product',)
+
+
+# === Админка для системы сравнения товаров ===
+
+@admin.register(SpecificationType)
+class SpecificationTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'comparison_type', 'priority', 'is_comparable', 'unit')
+    list_filter = ('comparison_type', 'is_comparable')
+    list_editable = ('priority', 'is_comparable')
+    search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',)}
+
+    fieldsets = (
+        ('Основное', {
+            'fields': ('name', 'slug')
+        }),
+        ('Настройки сравнения', {
+            'fields': ('comparison_type', 'priority', 'unit', 'is_comparable')
+        }),
+        ('Categorical', {
+            'fields': ('category_map',),
+            'classes': ('collapse',),
+            'description': 'Заполнять только для типа "Категориальное сравнение". Пример: {"OLED": 100, "IPS": 70, "TN": 40}'
+        }),
+    )

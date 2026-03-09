@@ -1,0 +1,21 @@
+{% load static %}
+
+<!-- Модальное окно сравнения товаров -->
+<div id="comparisonModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-window">
+    <button class="modal-close" aria-label="Закрыть">&times;</button>
+
+    <h2 class="modal-title" id="modalTitle">Сравнение товаров</h2>
+
+    <div id="comparisonModalBody">
+      <!-- Сюда загружается таблица сравнения через JavaScript -->
+      <div class="text-center py-4">Выберите 2 товара для сравнения</div>
+    </div>
+  </div>
+</div>
+
+<!-- Подсказка о выборе товара -->
+<div id="comparisonHint" class="comparison-hint"></div>
+
+<!-- Подключаем JavaScript -->
+<script src="{% static 'index/js/comparison.js' %}"></script>

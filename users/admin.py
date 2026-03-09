@@ -26,8 +26,7 @@ class UserAdmin(BaseUserAdmin):
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'avatar':
-            from django.forms import ImageField
             field = super().formfield_for_dbfield(db_field, request, **kwargs)
-            field = ImageField(validators=avatar_validator)
+            field.validators.append(avatar_validator)
             return field
         return super().formfield_for_dbfield(db_field, request, **kwargs)

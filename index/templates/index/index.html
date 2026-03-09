@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="catalog-layout">
+<div class="catalog-layout" id="main-content">
 
   <!-- Сайдбар -->
   <aside class="catalog-sidebar" aria-label="Фильтры каталога">
@@ -41,7 +41,7 @@
     </header>
 
     <!-- Список товаров -->
-    <div class="catalog-products" id="catalog-products">
+    <div class="catalog-products" id="search-results">
       {% include 'index/partials/product_list.html' %}
     </div>
   </div>

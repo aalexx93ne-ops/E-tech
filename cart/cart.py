@@ -167,6 +167,6 @@ class Cart:
                 item.quantity += data['quantity']
                 item.save()
 
-        del self.session[settings.CART_SESSION_ID]
+        self.session.pop(settings.CART_SESSION_ID, None)
         self.session.modified = True
         self.db_cart.save()

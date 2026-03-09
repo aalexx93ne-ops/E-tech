@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.conf import settings
-from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.validators import MinLengthValidator, MaxLengthValidator, MaxValueValidator
 from appx.validators import product_image_validator, banner_image_validator
 import re
 
@@ -73,7 +73,7 @@ class Banner(models.Model):
 
 class Discount(models.Model):
     name = models.CharField("Название скидки", max_length=100)
-    percent = models.PositiveIntegerField("Процент скидки")
+    percent = models.PositiveIntegerField("Процент скидки", validators=[MaxValueValidator(100)])
     start_date = models.DateTimeField("Начало акции", null=True, blank=True)
     end_date = models.DateTimeField("Конец акции", null=True, blank=True)
 
@@ -118,7 +118,7 @@ class Product(models.Model):
 
     def get_final_price(self):
         if self.discount and self.discount.is_active():
-            return round(self.price - (self.price * self.discount.percent / 100), 2)
+            return max(0, round(self.price - (self.price * self.discount.percent / 100), 2))
         return self.price
 
     def has_discount(self):
@@ -294,11 +294,51 @@ class SpecificationType(models.Model):
     """Тип характеристики (например: 'Диагональ экрана', 'Процессор')"""
     name = models.CharField("Название характеристики", max_length=100, unique=True)
     slug = models.SlugField("URL", unique=True, blank=True)
+    
+    # === Поля для системы сравнения ===
+    COMPARISON_CHOICES = [
+        ('higher_better', 'Чем больше — тем лучше'),
+        ('lower_better', 'Чем меньше — тем лучше'),
+        ('categorical', 'Категориальное сравнение'),
+        ('boolean', 'Булево сравнение'),
+    ]
+    
+    comparison_type = models.CharField(
+        "Тип сравнения",
+        max_length=20,
+        choices=COMPARISON_CHOICES,
+        default='higher_better'
+    )
+    priority = models.PositiveSmallIntegerField(
+        "Приоритет в сравнении",
+        default=50,
+        help_text="1-100, чем больше — тем выше в списке"
+    )
+    category_map = models.JSONField(
+        "Карта значений для categorical",
+        blank=True,
+        default=dict,
+        help_text='{"OLED": 100, "IPS": 70, "TN": 40}'
+    )
+    unit = models.CharField(
+        "Единица измерения",
+        max_length=50,
+        blank=True,
+        help_text="ГБ, г, мм, дюймов"
+    )
+    is_comparable = models.BooleanField(
+        "Участвует в сравнении",
+        default=True,
+        help_text="Если False — не показывать в таблице сравнения"
+    )
 
     class Meta:
         verbose_name = "Тип характеристики"
         verbose_name_plural = "Типы характеристик"
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_comparable', '-priority']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.slug:

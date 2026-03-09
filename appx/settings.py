@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 
 # Application definition
@@ -134,6 +134,7 @@ USE_THOUSAND_SEPARATOR = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
@@ -171,12 +172,11 @@ AUTHENTICATION_BACKENDS = [
 # Account settings
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 
 # Skip intermediate confirmation page for social login
-SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET = False
 
 # Logout requires POST (CSRF protection)
 ACCOUNT_LOGOUT_ON_GET = False
@@ -213,6 +213,9 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
 
 # Payment callback secret key
 PAYMENT_CALLBACK_SECRET = os.getenv('PAYMENT_CALLBACK_SECRET', 'dev-secret')
+if not DEBUG and PAYMENT_CALLBACK_SECRET == 'dev-secret':
+    import warnings
+    warnings.warn('PAYMENT_CALLBACK_SECRET is using the default dev value! Set it in .env for production.', stacklevel=1)
 
 # NowPayments API key
 NOWPAYMENTS_API_KEY = os.getenv('NOWPAYMENTS_API_KEY', None)
@@ -248,7 +251,6 @@ CONTENT_SECURITY_POLICY = {
 }
 
 # Security headers
-SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Caches
@@ -269,13 +271,6 @@ AXES_CACHE = 'default'  # Используем тот же кэш
 AXES_RESET_ON_SUCCESS = True
 AXES_USERNAME_FORM_FIELD = 'email'  # Используем email как идентификатор
 AXES_LOCK_BY_USER = True  # Блокировка по пользователю (вместо устаревшего AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP)
-
-# Отключаем предупреждения для LocMemCache в development
-SILENCED_SYSTEM_CHECKS = [
-    'django_ratelimit.E003',
-    'django_ratelimit.W001',
-    'axes.W001',
-]
 
 # AllAuth settings с защитой
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Требуется подтверждение email
@@ -351,8 +346,23 @@ LOGGING = {
     },
 }
 
+# Production security settings
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Условное подключение debug_toolbar только в DEBUG режиме
 if DEBUG:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
     INTERNAL_IPS = ['127.0.0.1', 'localhost']
+    SILENCED_SYSTEM_CHECKS = [
+        'django_ratelimit.E003',
+        'django_ratelimit.W001',
+        'axes.W001',
+    ]

@@ -1,9 +1,12 @@
 import json
+import logging
 import uuid
 import hashlib
 import hmac
 import requests
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -109,9 +112,7 @@ class NowPaymentsGateway(PaymentGateway):
             raise ValidationError(f'NowPayments connection error: {str(e)}')
 
         # Ответ содержит поля: id, invoice_url (см. документацию)
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning('NowPayments invoice response: %s', data)
+        logger.info('NowPayments invoice response: %s', data)
 
         invoice_id = str(data.get('id', ''))
         redirect_url = data.get('invoice_url', '')
@@ -242,9 +243,10 @@ class CryptoCloudGateway(PaymentGateway):
             return False
         
         # Формируем строку для проверки (сортируем ключи)
+        signing_key = secret or self.secret_key
         payload = "&".join(f"{k}={v}" for k, v in sorted(data.items()))
         expected = hmac.new(
-            self.secret_key.encode(),
+            signing_key.encode(),
             payload.encode(),
             hashlib.sha256
         ).hexdigest()
@@ -349,16 +351,16 @@ class PaymentService:
 
         payment_id = str(raw_payment_id)
 
-        try:
-            payment = Payment.objects.select_for_update().get(payment_id=payment_id)
-        except Payment.DoesNotExist:
-            raise ValidationError(f'Платёж {payment_id} не найден.')
-
-        # Идемпотентность: если статус уже установлен — не меняем
-        if payment.status == status:
-            return payment
-
         with transaction.atomic():
+            try:
+                payment = Payment.objects.select_for_update().get(payment_id=payment_id)
+            except Payment.DoesNotExist:
+                raise ValidationError(f'Платёж {payment_id} не найден.')
+
+            # Идемпотентность: если статус уже установлен — не меняем
+            if payment.status == status:
+                return payment
+
             payment.transition_to(status)
             if status == Payment.STATUS_SUCCEEDED:
                 order = payment.order

@@ -1,19 +1,23 @@
 {% load static %}
 <form id="filter-form"
-      hx-get="{% url 'index:index' %}"
-      hx-target="#catalog-products"
+      hx-get="{% if query %}{% url 'index:search' %}{% else %}{% url 'index:index' %}{% endif %}"
+      hx-target="#search-results"
       hx-swap="innerHTML"
       hx-push-url="true"
       hx-trigger="change, submit"
       class="sidebar">
+
+  {% if query %}
+    <input type="hidden" name="q" value="{{ query }}">
+  {% endif %}
 
   <h3 class="sidebar-title">Цена</h3>
   <div class="price-filter">
     <input type="text" inputmode="decimal" name="price_from" placeholder="От 0"
            value="{{ price_from|default:'' }}" autocomplete="off"
            hx-trigger="keyup changed delay:600ms"
-           hx-get="{% url 'index:index' %}"
-           hx-target="#catalog-products"
+           hx-get="{% if query %}{% url 'index:search' %}{% else %}{% url 'index:index' %}{% endif %}"
+           hx-target="#search-results"
            hx-swap="innerHTML"
            hx-push-url="true"
            hx-include="#filter-form">
@@ -21,8 +25,8 @@
     <input type="text" inputmode="decimal" name="price_to" placeholder="До 999 999"
            value="{{ price_to|default:'' }}" autocomplete="off"
            hx-trigger="keyup changed delay:600ms"
-           hx-get="{% url 'index:index' %}"
-           hx-target="#catalog-products"
+           hx-get="{% if query %}{% url 'index:search' %}{% else %}{% url 'index:index' %}{% endif %}"
+           hx-target="#search-results"
            hx-swap="innerHTML"
            hx-push-url="true"
            hx-include="#filter-form">
@@ -43,7 +47,7 @@
     {% endfor %}
   </ul>
   {% if brands|length > 5 %}
-  <button type="button" class="show-more-btn" onclick="toggleList('brands-list', this)">Показать все ({{ brands|length }})</button>
+  <button type="button" class="show-more-btn" data-toggle-list="brands-list">Показать все ({{ brands|length }})</button>
   {% endif %}
 
   <h3 class="sidebar-title" id="categories-title">Категории</h3>
@@ -61,7 +65,7 @@
     {% endfor %}
   </ul>
   {% if categories|length > 5 %}
-  <button type="button" class="show-more-btn" onclick="toggleList('categories-list', this)">Показать все ({{ categories|length }})</button>
+  <button type="button" class="show-more-btn" data-toggle-list="categories-list">Показать все ({{ categories|length }})</button>
   {% endif %}
 
   <h3 class="sidebar-title" id="tags-title">Теги</h3>
@@ -79,7 +83,7 @@
     {% endfor %}
   </ul>
   {% if tags|length > 5 %}
-  <button type="button" class="show-more-btn" onclick="toggleList('tags-list', this)">Показать все ({{ tags|length }})</button>
+  <button type="button" class="show-more-btn" data-toggle-list="tags-list">Показать все ({{ tags|length }})</button>
   {% endif %}
 
   {% if spec_filters %}
@@ -97,7 +101,7 @@
     {% endfor %}
   </ul>
   {% if spec_type.values|length > 5 %}
-  <button type="button" class="show-more-btn" onclick="toggleList('spec-{{ spec_type.slug }}-list', this)">Показать все ({{ spec_type.values|length }})</button>
+  <button type="button" class="show-more-btn" data-toggle-list="spec-{{ spec_type.slug }}-list">Показать все ({{ spec_type.values|length }})</button>
   {% endif %}
   {% endfor %}
   {% endif %}
@@ -115,8 +119,8 @@
 
   <h3 class="sidebar-title">Сортировка</h3>
   <select name="sort" class="sort-select"
-          hx-get="{% url 'index:index' %}"
-          hx-target="#catalog-products"
+          hx-get="{% if query %}{% url 'index:search' %}{% else %}{% url 'index:index' %}{% endif %}"
+          hx-target="#search-results"
           hx-swap="innerHTML"
           hx-push-url="true"
           hx-include="#filter-form"

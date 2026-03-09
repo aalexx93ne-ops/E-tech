@@ -15,24 +15,25 @@
     <link rel="stylesheet" href="{% static 'css/product_detail.css' %}" />
     <link rel="stylesheet" href="{% static 'css/swiper-bundle.min.css' %}" />
     <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+    <link rel="stylesheet" href="{% static 'index/css/comparison.css' %}" />
     {% block extra_head %}{% endblock %}
   </head>
   <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
     {% include 'menu.html' %}
 
-    <main id="main-content">
-      {% if messages %}
-        <div class="messages">
-          {% for message in messages %}
-            <div class="message message--{{ message.tags }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-      {% block content %}
-      {% endblock %}
-    </main>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message message--{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
 
     {% include 'footer.html' %}
+    {% include 'index/comparison_modal.html' %}
   </body>
 </html>

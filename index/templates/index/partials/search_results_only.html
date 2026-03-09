@@ -1,0 +1,44 @@
+{# HTMX-шаблон для поиска — возвращает содержимое для #search-results (innerHTML) #}
+{% if query %}
+  {% for product in products %}
+    {% include 'index/product_card.html' %}
+  {% empty %}
+    <div class="search-empty-full">
+      <svg class="search-empty-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="7" stroke="#9ea7ad" stroke-width="2"/>
+        <path d="M20 20L16 16" stroke="#9ea7ad" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p class="empty-message">Ничего не найдено по запросу "{{ query }}"</p>
+      <p class="empty-hint">Попробуйте изменить запрос или воспользуйтесь фильтрами в каталоге</p>
+    </div>
+  {% endfor %}
+
+  {% if is_paginated and page_obj.paginator.count > 0 %}
+  <nav class="pagination" aria-label="Пагинация">
+    {% if page_obj.has_previous %}
+      <a hx-get="?q={{ query|urlencode }}&page={{ page_obj.previous_page_number }}"
+         hx-target="#search-results"
+         hx-swap="innerHTML"
+         hx-push-url="?q={{ query|urlencode }}&page={{ page_obj.previous_page_number }}"
+         class="page-link">← Назад</a>
+    {% endif %}
+    <span class="page-current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a hx-get="?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}"
+         hx-target="#search-results"
+         hx-swap="innerHTML"
+         hx-push-url="?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}"
+         class="page-link">Вперёд →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% else %}
+  {# Пустой поиск — ничего не показываем, кроме подсказки #}
+  <div class="search-empty-full">
+    <svg class="search-empty-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="11" r="7" stroke="#9ea7ad" stroke-width="2"/>
+      <path d="M20 20L16 16" stroke="#9ea7ad" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <p class="empty-hint">Введите запрос для поиска товаров</p>
+  </div>
+{% endif %}

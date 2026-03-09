@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -18,8 +18,11 @@ from .forms import OrderCreateForm
 from .models import Order, OrderItem, Payment
 from .services import PaymentService
 
-PAYMENT_SECRET = getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
-NOWPAYMENTS_IPN_SECRET = getattr(settings, 'NOWPAYMENTS_IPN_SECRET', '')
+def _get_payment_secret():
+    return getattr(settings, 'PAYMENT_CALLBACK_SECRET', 'dev-secret')
+
+def _get_nowpayments_ipn_secret():
+    return getattr(settings, 'NOWPAYMENTS_IPN_SECRET', '')
 
 
 def order_create(request):
@@ -102,7 +105,9 @@ def order_create(request):
 
 
 def order_success(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    order = _get_order_for_user(request, order_id)
+    if order is None:
+        return HttpResponseForbidden()
     return render(request, 'orders/created.html', {'order': order})
 
 
@@ -120,7 +125,6 @@ def payment_page(request, order_id):
     """Страница оплаты заказа."""
     order = _get_order_for_user(request, order_id)
     if order is None:
-        from django.http import HttpResponseForbidden
         return HttpResponseForbidden()
     
     # Проверяем, есть ли активный платёж
@@ -142,7 +146,6 @@ def payment_create(request, order_id):
     """Создание платежа, редирект на платёжный шлюз."""
     order = _get_order_for_user(request, order_id)
     if order is None:
-        from django.http import HttpResponseForbidden
         return HttpResponseForbidden()
 
     service = PaymentService()
@@ -189,7 +192,7 @@ def payment_callback(request):
     service = PaymentService()
     # Для NowPayments используем IPN Secret; для Mock/прочих — PAYMENT_SECRET
     from .services import NowPaymentsGateway
-    secret = NOWPAYMENTS_IPN_SECRET if isinstance(service.gateway, NowPaymentsGateway) else PAYMENT_SECRET
+    secret = _get_nowpayments_ipn_secret() if isinstance(service.gateway, NowPaymentsGateway) else _get_payment_secret()
     try:
         service.handle_callback(data, signature, secret)
     except ValidationError as e:
@@ -202,10 +205,7 @@ def payment_callback(request):
 def payment_status(request, order_id):
     order = _get_order_for_user(request, order_id)
     if order is None:
-        from django.http import HttpResponseForbidden
         return HttpResponseForbidden()
-    order.payments.prefetch_related('payments')
-
     payment = order.payments.first()
     return JsonResponse({
         'order_id': order.id,

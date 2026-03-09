@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load order_tags %}
 
 {% block title %}Личный кабинет{% endblock %}
 
@@ -93,7 +94,7 @@
                     <td>#{{ order.id }}</td>
                     <td>{{ order.created|date:"d.m.Y H:i" }}</td>
                     <td>{{ order.get_total_cost }} &#8381;</td>
-                    <td>{% load order_tags %}{% status_badge order %}</td>
+                    <td>{% status_badge order %}</td>
                     <td><a href="{% url 'users:order_detail' order.id %}" class="detail-link">Подробнее</a></td>
                 </tr>
                 {% endfor %}
